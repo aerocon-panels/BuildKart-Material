@@ -12,14 +12,20 @@ export default function ProductCard({ product, onAdd, onEdit, onDelete }) {
       <div className="product-content">
         <div className="product-title-row">
           <h3>{product.name}</h3>
-          <div className="product-tools">
-            <button type="button" className="quiet-button" aria-label={`Edit ${product.name}`} onClick={() => onEdit(product)}>
-              <Pencil size={15} />
-            </button>
-            <button type="button" className="quiet-button" aria-label={`Remove ${product.name}`} onClick={() => onDelete(product)}>
-              <Trash2 size={15} />
-            </button>
-          </div>
+          {(onEdit || onDelete) && (
+            <div className="product-tools">
+              {onEdit && (
+                <button type="button" className="quiet-button" aria-label={`Edit ${product.name}`} onClick={() => onEdit(product)}>
+                  <Pencil size={15} />
+                </button>
+              )}
+              {onDelete && (
+                <button type="button" className="quiet-button" aria-label={`Remove ${product.name}`} onClick={() => onDelete(product)}>
+                  <Trash2 size={15} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <p>{product.description}</p>
         <div className="product-spec">{product.spec} · {product.coverage} sq ft / piece</div>

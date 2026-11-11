@@ -80,6 +80,8 @@ a { color: inherit; }
 .category-tabs button, .choice { padding: 9px 13px; border: 1px solid #dfe6df; border-radius: 30px; background: #fff; color: #617066; font-size: 11px; }
 .category-tabs button:hover, .choice:hover { border-color: #91a596; }
 .category-tabs .tab-active, .choice.is-selected { border-color: var(--green); background: var(--green); color: #fff; }
+.catalogue-status { margin: 14px 0; color: #617066; font-size: 12px; }
+.catalogue-status-error { color: #9c3d2c; }
 .product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 17px; }
 .product-card { overflow: hidden; border: 1px solid #e7ebe5; border-radius: 9px; background: #fff; }
 .product-art { position: relative; display: flex; height: 160px; align-items: center; justify-content: center; overflow: hidden; background: #e9e4d7; }

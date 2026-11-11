@@ -6,11 +6,15 @@ import ProductCard from './components/ProductCard.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
 import { CATEGORIES, DEFAULT_SETTINGS, INITIAL_PRODUCTS, money, readStorage, writeStorage } from './data.js';
+import { loadCatalog } from './api.js';
 
 const CUSTOMER_DEFAULTS = { name: '', phone: '', project: '', address: '', pin: '' };
 
 function App() {
   const [products, setProducts] = useState(() => readStorage('bk_products', INITIAL_PRODUCTS));
+  const [categories, setCategories] = useState(CATEGORIES);
+  const [catalogMode, setCatalogMode] = useState('loading');
+  const [catalogError, setCatalogError] = useState('');
   const [cart, setCart] = useState(() => readStorage('bk_cart', []));
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...readStorage('bk_settings', {}) }));
   const [customer, setCustomer] = useState(CUSTOMER_DEFAULTS);
@@ -29,8 +33,29 @@ function App() {
   const [advance, setAdvance] = useState(10);
 
   useEffect(() => {
-    if (!writeStorage('bk_products', products)) notify('Product changes could not be saved in this browser.');
-  }, [products]);
+    const controller = new AbortController();
+    loadCatalog(controller.signal)
+      .then((catalog) => {
+        setProducts(catalog.products);
+        setCategories(catalog.categories);
+        setSelectedId(catalog.products[0]?.id || '');
+        setCatalogMode('api');
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        console.error('Unable to load the BuildKart API catalogue.', error);
+        setCatalogError(error.message);
+        setCatalogMode('local');
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (catalogMode === 'local' && !writeStorage('bk_products', products)) {
+      notify('Product changes could not be saved in this browser.');
+    }
+  }, [products, catalogMode]);
 
   useEffect(() => {
     if (!writeStorage('bk_cart', cart)) notify('Your cart could not be saved in this browser.');
@@ -242,7 +267,9 @@ function App() {
               <h2>Building materials</h2>
               <p>Find a product, compare rates, and add quantities to your project cart.</p>
             </div>
-            <button type="button" className="button button-outline" onClick={() => openProductForm()}><span aria-hidden="true">＋</span> Add material</button>
+            {catalogMode !== 'api' && (
+              <button type="button" className="button button-outline" onClick={() => openProductForm()}><span aria-hidden="true">＋</span> Add material</button>
+            )}
           </div>
           <div className="catalogue-controls">
             <label className="search-field">
@@ -258,18 +285,33 @@ function App() {
             </label>
           </div>
           <div className="category-tabs" role="group" aria-label="Filter by category">
-            {['All materials', ...CATEGORIES].map((value) => (
+            {['All materials', ...categories].map((value) => (
               <button type="button" key={value} className={category === value ? 'tab-active' : ''} onClick={() => setCategory(value)}>{value}</button>
             ))}
           </div>
+          {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading products and categories…</p>}
+          {catalogMode === 'local' && catalogError && (
+            <p className="catalogue-status catalogue-status-error" role="alert">
+              The live catalogue is unavailable: {catalogError} Showing products saved in this browser instead.
+            </p>
+          )}
+          {catalogMode === 'api' && products.length === 0 && (
+            <p className="catalogue-status" role="status">No products are available in the database yet.</p>
+          )}
           {formOpen && <ProductForm product={editingProduct} onSave={saveProduct} onClose={() => { setFormOpen(false); setEditingProduct(null); }} />}
-          {filteredProducts.length > 0 ? (
+          {catalogMode === 'loading' ? null : filteredProducts.length > 0 ? (
             <div className="product-grid">
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAdd={addToCart} onEdit={openProductForm} onDelete={deleteProduct} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAdd={addToCart}
+                  onEdit={catalogMode === 'local' ? openProductForm : undefined}
+                  onDelete={catalogMode === 'local' ? deleteProduct : undefined}
+                />
               ))}
             </div>
-          ) : <div className="empty-results">No matching products found. Try a different search or category.</div>}
+          ) : products.length > 0 ? <div className="empty-results">No matching products found. Try a different search or category.</div> : null}
           <p className="catalogue-footnote">Sample catalogue rates are estimates. Confirm availability, taxes, and delivery terms with the store.</p>
         </section>
 

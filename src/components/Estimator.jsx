@@ -2,7 +2,7 @@ import { Calculator, Package } from 'lucide-react';
 import { money } from '../data.js';
 
 export default function Estimator({ products, selectedId, onSelect, length, onLength, width, onWidth, wastage, onWastage, onAdd }) {
-  const selected = products.find((product) => product.id === selectedId) || products[0];
+  const selected = products.find((product) => String(product.id) === String(selectedId)) || products[0];
   const area = Math.max(0, (Number(length) || 0) * (Number(width) || 0));
   const adjustedArea = area * (1 + wastage / 100);
   const quantity = selected ? Math.ceil(adjustedArea / Math.max(selected.coverage, 0.1)) : 0;
