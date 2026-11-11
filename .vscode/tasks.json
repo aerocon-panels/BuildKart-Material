@@ -2,103 +2,90 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Run BuildKart API integration verification",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"run",
-				"--project",
-				"backend\\BuildKart.API",
-				"--no-launch-profile",
-				"--urls",
-				"http://localhost:5000"
-			],
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Run BuildKart API in Development",
+			"label": "Check BuildKart copy prerequisites",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/c",
-				"set ASPNETCORE_ENVIRONMENT=Development&&dotnet run --project backend\\BuildKart.API --no-launch-profile --urls http://localhost:5001"
-			],
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Test BuildKart API endpoints",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"run",
-				"--project",
-				".integration-check\\IntegrationCheck.csproj"
+				"echo === D drive free space === & fsutil volume diskfree D: & echo === Source path === & if exist \"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material\\.git\" (echo Git metadata present) else (echo Git metadata missing) & echo === Git status === & git -C \"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material\" status --short --branch & echo === Git remotes === & git -C \"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material\" remote -v & echo === Index lock === & if exist \"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material\\.git\\index.lock\" (echo index.lock exists) else (echo no index.lock) & echo === Git processes === & tasklist /FI \"IMAGENAME eq git.exe\" & echo === Source total bytes === & node -e \"const fs=require('fs'),p=require('path');let total=0,files=0;function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,e.name);if(e.isDirectory())walk(f);else{try{total+=fs.statSync(f).size;files++}catch{}}}}walk('C:/Users/NIKHIL DHOOPAL/OneDrive/Desktop/BuildKart-Material');console.log(JSON.stringify({files,totalBytes:total}))\""
 			],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "Run BuildKart frontend integration",
+			"label": "Inspect BuildKart drive and Git state",
 			"type": "shell",
-			"command": "npm",
+			"command": "node",
 			"args": [
-				"run",
-				"dev",
-				"--",
-				"--host",
-				"localhost"
-			],
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
-		},
-		{
-			"label": "Recheck BuildKart API routes",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"run",
-				"--project",
-				".integration-check\\IntegrationCheck.csproj"
+				"-e",
+				"const fs=require('fs'),p=require('path'),cp=require('child_process');const src='C:/Users/NIKHIL DHOOPAL/OneDrive/Desktop/BuildKart-Material';try{const s=fs.statfsSync('D:/');console.log('D_DRIVE',JSON.stringify({freeBytes:s.bavail*s.bsize,totalBytes:s.blocks*s.bsize}))}catch(e){console.log('D_DRIVE_ERROR',e.message)}let total=0,files=0;function walk(d){for(const x of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,x.name);if(x.isDirectory())walk(f);else{try{total+=fs.statSync(f).size;files++}catch(e){}}}}walk(src);console.log('SOURCE_SIZE',JSON.stringify({files,totalBytes:total}));for(const [label,args] of [['STATUS',['-C',src,'status','--short','--branch']],['REMOTE',['-C',src,'remote','-v']]]){const r=cp.spawnSync('git',args,{encoding:'utf8'});console.log(label,JSON.stringify({code:r.status,stdout:r.stdout,stderr:r.stderr}))}const lock=p.join(src,'.git','index.lock');console.log('INDEX_LOCK',fs.existsSync(lock));const task=cp.spawnSync('tasklist',['/FI','IMAGENAME eq git.exe'],{encoding:'utf8'});console.log('GIT_PROCESSES',task.stdout);"
 			],
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "Build API and frontend integration",
+			"label": "Verify migration target and worktree",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const fs=require('fs'),p=require('path'),cp=require('child_process');const src='C:/Users/NIKHIL DHOOPAL/OneDrive/Desktop/BuildKart-Material',dst='D:/BuildKart-Material';console.log('DESTINATION_EXISTS',fs.existsSync(dst));for(const [label,args] of [['STATUS',['-C',src,'status','--short','--branch']],['STAGED',['-C',src,'diff','--cached','--stat']],['UNSTAGED',['-C',src,'diff','--stat']],['REMOTES',['-C',src,'remote','-v']]]){const r=cp.spawnSync('git',args,{encoding:'utf8'});console.log(label,JSON.stringify({code:r.status,stdout:r.stdout,stderr:r.stderr}))}console.log('INDEX_LOCK',fs.existsSync(p.join(src,'.git','index.lock')));console.log('GITIGNORE_CHECK',JSON.stringify(Object.fromEntries(['src/data.js','node_modules/a.js','backend/BuildKart.API/obj/a','src/bin/a','.integration-check/a','.env.local','secrets.json','backend/secrets.json','private.pfx'].map(x=>[x,cp.spawnSync('git',['-C',src,'check-ignore','--no-index',x],{encoding:'utf8'}).status===0]))));"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Copy complete BuildKart project to D drive",
 			"type": "shell",
 			"command": "cmd",
 			"args": [
 				"/c",
-				"dotnet build backend\\BuildKart.API\\BuildKart.API.csproj && npm run build"
+				"robocopy \"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material\" \"D:\\BuildKart-Material\" /E /COPY:DAT /DCOPY:DAT /R:1 /W:1 /XJ /NFL /NDL /NP /NJH /NJS & if errorlevel 8 (exit /b 1) else (exit /b 0)"
 			],
 			"isBackground": false,
-			"problemMatcher": [
-				"$msCompile"
-			],
+			"problemMatcher": [],
 			"group": "build"
 		},
 		{
-			"label": "Verify BuildKart frontend server",
+			"label": "Verify ready BuildKart migration destination",
 			"type": "shell",
-			"command": "npm",
+			"command": "node",
 			"args": [
-				"run",
-				"dev",
-				"--",
-				"--host",
-				"localhost",
-				"--port",
-				"5173",
-				"--strictPort"
+				"-e",
+				"const fs=require('fs'),p=require('path'),cp=require('child_process');const src='C:/Users/NIKHIL DHOOPAL/OneDrive/Desktop/BuildKart-Material',dst='D:/BuildKart-Material';console.log('DESTINATION_EXISTS',fs.existsSync(dst));if(!fs.existsSync(dst)){console.log('STOP: destination missing');process.exit(2)}const contents=fs.readdirSync(dst);console.log('DESTINATION_ENTRY_COUNT',contents.length);if(contents.length){console.log('DESTINATION_ENTRIES',JSON.stringify(contents));process.exit(3)}const s=fs.statfsSync('D:/');console.log('D_DRIVE_FREE_BYTES',s.bavail*s.bsize);for(const [label,args] of [['STATUS',['-C',src,'status','--porcelain=v1','--branch']],['REMOTE',['-C',src,'remote','get-url','origin']],['BRANCH',['-C',src,'branch','--show-current']]]){const r=cp.spawnSync('git',args,{encoding:'utf8'});console.log(label,JSON.stringify({code:r.status,stdout:r.stdout,stderr:r.stderr}))}console.log('INDEX_LOCK',fs.existsSync(p.join(src,'.git','index.lock')));"
 			],
-			"isBackground": true,
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Copy BuildKart worktree and Git history to D",
+			"type": "shell",
+			"command": "robocopy",
+			"args": [
+				"C:\\Users\\NIKHIL DHOOPAL\\OneDrive\\Desktop\\BuildKart-Material",
+				"D:\\BuildKart-Material",
+				"/E",
+				"/COPY:DAT",
+				"/DCOPY:DAT",
+				"/R:1",
+				"/W:1",
+				"/XJ",
+				"/XD",
+				"node_modules",
+				"dist",
+				"bin",
+				"obj",
+				"/NFL",
+				"/NDL",
+				"/NP",
+				"/NJH",
+				"/NJS"
+			],
+			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
 		}
