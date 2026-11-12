@@ -2,6 +2,25 @@ import { INITIAL_PRODUCTS } from './data.js';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
+async function requestJson(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}/${path}`, {
+    ...options,
+    headers: { Accept: 'application/json', ...options.headers },
+  });
+
+  let result = null;
+  try {
+    result = await response.json();
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+  }
+
+  if (!response.ok) {
+    throw new Error(result?.detail || result?.title || `Request failed with status ${response.status}.`);
+  }
+  return result;
+}
+
 async function getCollection(path, signal) {
   const response = await fetch(`${API_BASE_URL}/${path}`, {
     headers: { Accept: 'application/json' },
@@ -50,7 +69,8 @@ export async function loadCatalog(signal) {
     .map((product) => {
       const existingProduct = INITIAL_PRODUCTS.find((item) =>
         item.name === product.name && item.category === product.categoryName);
-      const coverage = getCoverage(product.specification, existingProduct);
+      const presentation = existingProduct || INITIAL_PRODUCTS.find((item) => item.category === product.categoryName);
+      const coverage = getCoverage(product.specification, presentation);
 
       return {
         id: product.id,
@@ -60,9 +80,41 @@ export async function loadCatalog(signal) {
         rate: Number(product.unitPrice) / coverage,
         coverage,
         description: product.description || '',
-        tone: existingProduct?.tone || 'stone',
+        tone: presentation?.tone || 'stone',
+        image: presentation?.image,
+        label: presentation?.label || product.categoryName,
+        rating: presentation?.rating,
+        reviewCount: presentation?.reviewCount,
       };
     });
 
   return { categories, products };
+}
+
+export async function loadPaymentOrder(orderNumber, signal) {
+  return requestJson(`payments/orders/${encodeURIComponent(orderNumber)}`, { signal });
+}
+
+export async function createCheckoutOrder(checkout) {
+  return requestJson('payments/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(checkout),
+  });
+}
+
+export async function createPaymentIntent(orderNumber, paymentType, method = 'UPI') {
+  return requestJson(`payments/orders/${encodeURIComponent(orderNumber)}/intents`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paymentType, method }),
+  });
+}
+
+export async function markPaymentProcessing(paymentId) {
+  return requestJson(`payments/transactions/${paymentId}/processing`, { method: 'POST' });
+}
+
+export async function loadPaymentStatus(paymentId) {
+  return requestJson(`payments/transactions/${paymentId}`);
 }

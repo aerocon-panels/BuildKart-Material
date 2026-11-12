@@ -1,7 +1,7 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { money } from '../data.js';
 
-export default function CartPanel({ cart, onQuantity, onRemove, customer, onCustomer, subtotal, units, discount, gst, total, phone, upi, advance, onAdvance, onWhatsApp, onPdf }) {
+export default function CartPanel({ cart, onQuantity, onRemove, customer, onCustomer, subtotal, units, discount, gst, total, phone, upi, advance, onAdvance, onWhatsApp, onPdf, onPayment }) {
   const advanceAmount = total * advance / 100;
 
   return (
@@ -73,8 +73,9 @@ export default function CartPanel({ cart, onQuantity, onRemove, customer, onCust
           <div className="quote-actions">
             <button type="button" className="button button-primary" disabled={cart.length === 0} onClick={onWhatsApp}>Send WhatsApp quote</button>
             <button type="button" className="button button-outline" disabled={cart.length === 0} onClick={onPdf}>Download PDF</button>
+            <button type="button" className="button button-pay-online" onClick={onPayment}>Pay Online &amp; Payment Methods (UPI / Cards / Bank)</button>
           </div>
-          <small className="quote-contact">Store contact: +{phone}</small>
+          <small className="quote-contact">Store contact: {phone}</small>
         </aside>
       </div>
     </section>

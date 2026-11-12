@@ -36,6 +36,7 @@ The backend does not connect to a database on startup and no SQL Server installa
 dotnet user-secrets init --project backend\BuildKart.API
 dotnet user-secrets set "ConnectionStrings:BuildKart" "<your SQL Server connection string>" --project backend\BuildKart.API
 dotnet user-secrets set "Authentication:Jwt:SigningKey" "<a unique random secret of at least 32 characters>" --project backend\BuildKart.API
+dotnet user-secrets set "Payments:WebhookSecret" "<a unique random webhook HMAC secret>" --project backend\BuildKart.API
 ```
 
 For deployments, use a managed secret store or environment variables such as `ConnectionStrings__BuildKart` and `Authentication__Jwt__SigningKey`. Configure `Authentication:Jwt:Issuer` and `Authentication:Jwt:Audience` to match the trusted token issuer. Without a configured signing key the API uses a temporary process-local key, so tokens will not survive a restart. No login or token-issuance endpoint or default administrator account is included.
@@ -46,7 +47,7 @@ To allow a different frontend origin, set `Cors:AllowedOrigins` (for example, `C
 
 The SQL scripts are templates for an existing SQL Server database; they do not create a database or connect to a server. Select or create a database using your SQL Server tooling, then run `database\schema.sql` followed by `database\seed-data.sql`. The seed script inserts the storefront's sample product categories and products. These prices are examples and should be confirmed before use.
 
-The backend uses EF Core SQL Server and does not apply migrations or seed data automatically. The schema script is the initial schema; if you change the EF models, update the SQL schema accordingly.
+The backend uses EF Core SQL Server and does not apply migrations or seed data automatically. The schema script is the initial schema; if you change the EF models, update the SQL schema accordingly. For an existing database, run `database\payment-upgrade.sql` once to add the payment tracking fields before using the payment endpoints.
 The current database has not been seeded, so the storefront will show an empty catalogue until you choose to run the optional seed script.
 
 ## Included features
@@ -59,9 +60,10 @@ The current database has not been seeded, so the storefront will show an empty c
 - Customer, project, site, contact, and PIN details
 - WhatsApp quotation sharing and PDF quotation download
 - UPI advance estimates at 10% or 50%
+- Payment portal with full/20% advance cart previews when offline and API-backed orders/payment-status tracking when connected
 - Editable store contact and UPI settings
 - Responsive desktop and mobile layouts
 
 ## Important
 
-The storefront reads its product catalogue from the API when available; the cart, customer quote details, and store settings remain in browser storage. Catalogue editing in the storefront is available only in local fallback mode; API-backed catalog changes require an authenticated admin workflow. Catalog rates and contact/payment details are sample defaults and should be confirmed before publishing. UPI links only hand off to a compatible payment app; they do not confirm or process payments. Quotation totals are estimates, and delivery charges are not included. The API uses an example 18% tax rate that can be changed through `Sales:TaxRate`.
+The storefront reads its product catalogue from the API when available; the cart, customer quote details, and store settings remain in browser storage. Catalogue editing in the storefront is available only in local fallback mode; API-backed catalog changes require an authenticated admin workflow. Catalog rates and contact/payment details are sample defaults and should be confirmed before publishing. Without the backend, the payment portal provides a clearly labeled UI preview from the browser cart; it does not create an order, payment intent, or payment status. Preview UPI QR codes and app links can initiate a real transfer, but they are not tied to an order and cannot be verified or recorded by BuildKart. UPI handoffs for real orders also do not confirm payment. Real payment transactions remain Pending or Processing until a trusted server webhook verifies them. Configure `Payments:WebhookSecret` in backend secrets to accept signed payment confirmations; card/net-banking processing remains unavailable until a merchant gateway is integrated and its credentials are configured. Quotation totals are estimates, and delivery charges are not included. The API uses an example 18% tax rate that can be changed through `Sales:TaxRate`.

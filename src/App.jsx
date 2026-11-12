@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Menu, Package, Settings, ShoppingCart, Truck, X } from 'lucide-react';
+import { Building2, Calculator, CheckCircle2, CreditCard, Menu, MessageCircle, Phone, Plus, Search, Settings, ShoppingCart, X } from 'lucide-react';
 import CartPanel from './components/CartPanel.jsx';
 import Estimator from './components/Estimator.jsx';
+import PaymentDialog from './components/PaymentDialog.jsx';
 import ProductCard from './components/ProductCard.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
@@ -9,6 +10,11 @@ import { CATEGORIES, DEFAULT_SETTINGS, INITIAL_PRODUCTS, money, readStorage, wri
 import { loadCatalog } from './api.js';
 
 const CUSTOMER_DEFAULTS = { name: '', phone: '', project: '', address: '', pin: '' };
+
+function formatStorePhone(phone) {
+  const digits = phone.replace(/[^\d]/g, '');
+  return digits.startsWith('91') ? `+91 ${digits.slice(2)}` : `+${digits}`;
+}
 
 function App() {
   const [products, setProducts] = useState(() => readStorage('bk_products', INITIAL_PRODUCTS));
@@ -24,6 +30,10 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(() => {
+    const parameters = new URLSearchParams(window.location.search);
+    return parameters.has('payOrder') || parameters.get('paymentPreview') === 'true';
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [selectedId, setSelectedId] = useState(INITIAL_PRODUCTS[0].id);
@@ -74,6 +84,7 @@ function App() {
     });
     if (sort === 'price-low') result.sort((first, second) => first.rate - second.rate);
     if (sort === 'price-high') result.sort((first, second) => second.rate - first.rate);
+    if (sort === 'rating') result.sort((first, second) => (second.rating || 0) - (first.rating || 0));
     return result;
   }, [products, category, search, sort]);
 
@@ -83,6 +94,7 @@ function App() {
   const discountedSubtotal = subtotal * (1 - discount);
   const gst = discountedSubtotal * 0.18;
   const total = discountedSubtotal + gst;
+  const displayPhone = formatStorePhone(settings.phone);
 
   function notify(message) {
     setNotice(message);
@@ -147,7 +159,7 @@ function App() {
       `Approx. GST (18%): ${money(gst)}`,
       `Estimated total: ${money(total)}`,
       `UPI advance (${advance}%): ${money(total * advance / 100)}`,
-      `Store contact: +${settings.phone}`,
+      `Store contact: ${displayPhone}`,
       `UPI: ${settings.upi || 'Please confirm with the store'}`,
       'Estimate only; delivery and final site measurements are subject to confirmation.',
     ].join('\n');
@@ -209,6 +221,16 @@ function App() {
     setFormOpen(true);
   }
 
+  function payForProduct(product) {
+    addToCart(product);
+    setPaymentOpen(true);
+  }
+
+  function estimateProduct(product) {
+    setSelectedId(product.id);
+    document.getElementById('estimator')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   function saveSettings(nextSettings) {
     setSettings(nextSettings);
     setSettingsOpen(false);
@@ -218,76 +240,88 @@ function App() {
   return (
     <>
       <header className="site-header">
-        <a className="brand" href="#" aria-label="BuildKart home">
-          <span className="brand-mark">BK</span>
-          <span><strong>BuildKart</strong><small>BUILDING MATERIALS STORE</small></span>
-        </a>
-        <button type="button" className="mobile-menu-button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="brand">
+          <span className="brand-mark"><Building2 size={26} strokeWidth={2.2} /></span>
+          <span className="brand-copy">
+            <span className="brand-title"><strong>BuildKart</strong><b>V3.0 OFFICIAL</b></span>
+            <small><i /> Dispatch: <a href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer">{displayPhone}</a><span>•</span> UPI: <b>{settings.upi}</b></small>
+          </span>
+        </div>
+        <label className="header-search">
+          <Search size={20} aria-hidden="true" />
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search panels, boards, sheets..." aria-label="Search materials" />
+        </label>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="header-add"
+            onClick={() => openProductForm()}
+            aria-label="Add material"
+            title={catalogMode === 'api' ? 'Material creation is managed by the connected catalogue API.' : undefined}
+            disabled={catalogMode !== 'local'}
+          >
+            <Plus size={22} /><span>Add Material</span>
+          </button>
+          <button type="button" className="header-pay" aria-label="Pay Online" onClick={() => setPaymentOpen(true)}><CreditCard size={17} /><span>Pay Online</span></button>
+          <a className="header-help" aria-label="Live Help" href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /><Phone className="whatsapp-phone" size={9} /> <span>Live Help</span></a>
+          <a className="header-cart" href="#cart" aria-label={`Cart, ${units} items`}><ShoppingCart size={20} /><span>Cart</span><b>{units}</b></a>
+          <button type="button" className="mobile-menu-button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
         <nav className={`main-nav ${menuOpen ? 'nav-open' : ''}`}>
           <a href="#products" onClick={() => setMenuOpen(false)}>Materials</a>
           <a href="#estimator" onClick={() => setMenuOpen(false)}>Estimator</a>
           <a href="#cart" onClick={() => setMenuOpen(false)}>Quotations</a>
           <button type="button" className="nav-settings" onClick={() => { setSettingsOpen(true); setMenuOpen(false); }}><Settings size={16} /> Store settings</button>
         </nav>
-        <a className="header-cart" href="#cart"><ShoppingCart size={17} /> Cart <b>{units}</b></a>
       </header>
 
       <main>
-        <div className="wholesale-banner">WHOLESALE PRICING ACTIVE <span>·</span> 5% OFF ON 25+ PCS <span>·</span> 10% OFF ON 50+ PCS <span>·</span> UPI ADVANCE ESTIMATE</div>
         <section className="hero">
-          <div className="hero-copy">
-            <span className="eyebrow">BUILD SMART. BUY DIRECT.</span>
-            <h1>Heavy building.<br /><em>Thoughtful design.</em></h1>
-            <p>Order Aerocon panels, Bison boards, roofing sheets and elevation planks with practical project estimates and quick WhatsApp quotations.</p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#products">Explore materials <span aria-hidden="true">↗</span></a>
-              <a className="button button-outline" href="#estimator">Estimate your area</a>
+          <div className="hero-inner">
+            <div className="live-store-banner">
+              <div><i /><span><strong>v3.0 Live:</strong> Orders & WhatsApp to <b>{displayPhone}</b><span>•</span> UPI ID: <b>{settings.upi}</b></span></div>
+              <button type="button" onClick={() => window.location.reload()}>Reload Fresh Store</button>
             </div>
-            <div className="trust-row">
-              <span><CheckCircle2 size={16} /> Curated material range</span>
-              <span><Package size={16} /> Wholesale rates</span>
-              <span><Truck size={16} /> Site dispatch</span>
+            <div className="hero-badges">
+              <span className="badge badge-gold">WHOLESALE TIER ACTIVE</span>
+              <span className="badge badge-green">5% OFF on 25+ pcs · 10% OFF on 50+ pcs</span>
+              <span className="badge badge-blue">Instant UPI Token Advance</span>
             </div>
-          </div>
-          <div className="hero-art" aria-label="Illustration of layered construction panels" role="img">
-            <span className="hero-art-label">MATERIALS FOR<br />BETTER BUILDINGS</span>
-            <div className="hero-slab slab-one" />
-            <div className="hero-slab slab-two" />
-            <div className="hero-slab slab-three" />
-            <span className="hero-art-footer">PANELS · BOARDS · ROOFING</span>
+            <div className="hero-main">
+              <div className="hero-copy">
+                <h1>Heavy Building &amp; Architectural Panels</h1>
+                <p>Order Aerocon panels, Bison boards, roofing sheets, and elevation planks with project bill generation &amp; instant UPI token advance.</p>
+              </div>
+              <div className="hero-highlights">
+                <a className="button button-primary hero-estimator" href="#estimator"><Calculator size={19} /> Quick Area Estimator</a>
+                <div className="hero-proof"><span><CheckCircle2 size={23} /></span><div><strong>Genuine Brand Certified</strong><small>GST Invoice &amp; Bulk Rates</small></div></div>
+              </div>
+            </div>
           </div>
         </section>
 
         <section className="section catalogue-section" id="products">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">OUR CATALOGUE</span>
-              <h2>Building materials</h2>
-              <p>Find a product, compare rates, and add quantities to your project cart.</p>
-            </div>
-            {catalogMode !== 'api' && (
-              <button type="button" className="button button-outline" onClick={() => openProductForm()}><span aria-hidden="true">＋</span> Add material</button>
-            )}
-          </div>
-          <div className="catalogue-controls">
-            <label className="search-field">
-              <span className="search-icon" aria-hidden="true">⌕</span>
-              <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search panels, boards, sheets..." aria-label="Search materials" />
-            </label>
-            <label className="sort-field"><span className="sr-only">Sort materials</span>
-              <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                <option value="featured">Sort: Featured</option>
-                <option value="price-low">Price: Low to high</option>
-                <option value="price-high">Price: High to low</option>
-              </select>
-            </label>
-          </div>
           <div className="category-tabs" role="group" aria-label="Filter by category">
             {['All materials', ...categories].map((value) => (
-              <button type="button" key={value} className={category === value ? 'tab-active' : ''} onClick={() => setCategory(value)}>{value}</button>
+              <button type="button" key={value} className={category === value ? 'tab-active' : ''} onClick={() => setCategory(value)}>{value === 'All materials' ? 'All Products' : value}</button>
             ))}
+          </div>
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">BUILDKART MATERIALS</span>
+              <h2>{category === 'All materials' ? 'All Building Materials' : category}</h2>
+              <p>Showing {filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'}</p>
+            </div>
+            <label className="sort-field"><span>Sort by:</span>
+              <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                <option value="featured">Featured</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </label>
           </div>
           {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading products and categories…</p>}
           {catalogMode === 'local' && catalogError && (
@@ -306,6 +340,8 @@ function App() {
                   key={product.id}
                   product={product}
                   onAdd={addToCart}
+                  onPay={payForProduct}
+                  onEstimate={estimateProduct}
                   onEdit={catalogMode === 'local' ? openProductForm : undefined}
                   onDelete={catalogMode === 'local' ? deleteProduct : undefined}
                 />
@@ -338,21 +374,38 @@ function App() {
           discount={discount}
           gst={gst}
           total={total}
-          phone={settings.phone}
+          phone={displayPhone}
           upi={settings.upi}
           advance={advance}
           onAdvance={setAdvance}
           onWhatsApp={sendWhatsApp}
           onPdf={downloadPdf}
+          onPayment={() => setPaymentOpen(true)}
         />
       </main>
 
       <footer className="site-footer">
         <div><strong>{settings.storeName}</strong><span>{settings.location}</span></div>
-        <div><span>Contact: +{settings.phone}</span>{settings.gstin && <span>GSTIN: {settings.gstin}</span>}</div>
+        <div><span>Contact: {displayPhone}</span>{settings.gstin && <span>GSTIN: {settings.gstin}</span>}</div>
         <small>Product rates, availability, delivery, and final taxes are subject to confirmation.</small>
       </footer>
       {settingsOpen && <SettingsDialog settings={settings} onSave={saveSettings} onClose={() => setSettingsOpen(false)} />}
+      {paymentOpen && (
+        <PaymentDialog
+          onClose={() => setPaymentOpen(false)}
+          upi={settings.upi}
+          storeName={settings.storeName}
+          phone={displayPhone}
+          initialOrderNumber={new URLSearchParams(window.location.search).get('payOrder') || ''}
+          initialPaymentType={new URLSearchParams(window.location.search).get('paymentType') || ''}
+          initialPreviewAmount={Number(new URLSearchParams(window.location.search).get('amount')) || 0}
+          initialPreviewTotal={Number(new URLSearchParams(window.location.search).get('previewTotal')) || 0}
+          cart={cart}
+          cartTotal={total}
+          customerDetails={customer}
+          canCheckout={catalogMode === 'api'}
+        />
+      )}
       {notice && <div className="toast" role="status">{notice}</div>}
     </>
   );

@@ -99,15 +99,20 @@ CREATE TABLE dbo.Payments
     OrderId int NOT NULL,
     Amount decimal(18,2) NOT NULL,
     Method nvarchar(30) NOT NULL,
+    PaymentType nvarchar(30) NOT NULL,
     Status nvarchar(30) NOT NULL CONSTRAINT DF_Payments_Status DEFAULT (N'Pending'),
     TransactionReference nvarchar(100) NULL,
+    GatewayTransactionId nvarchar(100) NULL,
     PaidAtUtc datetimeoffset(0) NULL,
     CreatedAtUtc datetimeoffset(0) NOT NULL CONSTRAINT DF_Payments_CreatedAtUtc DEFAULT (SYSUTCDATETIME()),
+    UpdatedAtUtc datetimeoffset(0) NOT NULL CONSTRAINT DF_Payments_UpdatedAtUtc DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT CK_Payments_Amount_Positive CHECK (Amount > 0),
     CONSTRAINT FK_Payments_Orders FOREIGN KEY (OrderId) REFERENCES dbo.Orders (Id)
 );
 CREATE UNIQUE INDEX UX_Payments_TransactionReference
     ON dbo.Payments (TransactionReference) WHERE TransactionReference IS NOT NULL;
+CREATE UNIQUE INDEX UX_Payments_GatewayTransactionId
+    ON dbo.Payments (GatewayTransactionId) WHERE GatewayTransactionId IS NOT NULL;
 CREATE INDEX IX_Payments_OrderId ON dbo.Payments (OrderId);
 
 CREATE TABLE dbo.AdminUsers

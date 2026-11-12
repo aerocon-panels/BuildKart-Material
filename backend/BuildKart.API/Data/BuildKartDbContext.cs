@@ -87,6 +87,9 @@ public sealed class BuildKartDbContext(DbContextOptions<BuildKartDbContext> opti
             entity.HasIndex(payment => payment.TransactionReference)
                 .IsUnique()
                 .HasFilter("[TransactionReference] IS NOT NULL");
+            entity.HasIndex(payment => payment.GatewayTransactionId)
+                .IsUnique()
+                .HasFilter("[GatewayTransactionId] IS NOT NULL");
             entity.HasOne(payment => payment.Order)
                 .WithMany(order => order.Payments)
                 .HasForeignKey(payment => payment.OrderId)
