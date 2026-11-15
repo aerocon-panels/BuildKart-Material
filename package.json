@@ -1,16 +1,18 @@
 {
-  "name": "aerocon-panels-frontend",
+  "name": "buildkart-material",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.468.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

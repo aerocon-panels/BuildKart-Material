@@ -1,92 +1,69 @@
-# Aerocon Panels Frontend
+# BuildKart Material
 
-This is the complete frontend-only version of the Aerocon Panels website.
+A responsive React and Vite storefront concept for building materials. Product and store settings are saved in the current browser; the project does not include a shared database, authentication, inventory integration, or a live payment gateway.
 
-## Run locally
+## Requirements
 
-1. Install Node.js 18+.
-2. Open this folder in a terminal.
-3. Run:
+- Node.js 18 or newer and npm (frontend)
+- .NET 10 SDK (backend)
+- SQL Server is only needed when you choose to configure and use the API. It is not required to build or start the backend.
+
+## Run the frontend
+
+From the project root:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the Vite URL shown in the terminal.
+Open the local URL printed by Vite (normally `http://localhost:5173`). Create a production frontend build with `npm run build`.
 
-## Build for deployment
+## Run the backend
+
+In a separate terminal, from the project root:
 
 ```bash
-npm run build
+dotnet run --project backend\BuildKart.API
 ```
 
-The production files will be in `dist/`.
+The development launch profile listens at `http://localhost:5000`, loads .NET User Secrets, and allows the Vite origin `http://localhost:5173` by default.
+The storefront reads products and categories from `http://localhost:5000/api` by default. To use another API URL, set `VITE_API_BASE_URL` in a root `.env` file before starting Vite (see [.env.example](./.env.example)). It shows a loading state while requesting the API and reports API errors; if the API is unavailable, the storefront uses products saved in this browser without replacing them. When API data is available, catalogue management is read-only in the storefront; product/category changes require an authenticated admin workflow.
 
-## Private Super User dashboard
+The backend does not connect to a database on startup and no SQL Server installation is assumed. Until a connection string is configured, API data routes return `503 Service Unavailable`. To enable them, configure a SQL Server connection string in .NET user-secrets or an environment variable; do not put credentials in this React project:
 
-The public website remains available without signing in. The header's **Super User**
-button opens a separate login and customer-enquiry dashboard. The dashboard uses
-Supabase Auth and displays the dashboard only for the confirmed
-`saas.agency2021@gmail.com` account. Row Level Security must be configured before
-the dashboard can access customer records.
-
-### Supabase setup
-
-1. In Supabase Authentication, confirm the `saas.agency2021@gmail.com` user
-   exists and its email is verified. Public sign-up is not required for this
-   feature; this website has no public Super User registration flow.
-2. For a new setup, run
-   [`supabase/super-user-dashboard.sql`](./supabase/super-user-dashboard.sql)
-   in the SQL Editor for the same project as the frontend. If the deployed
-   table already has its public enquiry INSERT policy but lacks Super User
-   read access, run the additive
-   [`supabase/super-user-read-policy.sql`](./supabase/super-user-read-policy.sql)
-   migration instead; it preserves the existing INSERT policy.
-3. Sign in at `/#super-user` using that confirmed account.
-
-The database RLS policy binds access to the Auth user ID for the confirmed
-`saas.agency2021@gmail.com` account. The additive read-policy migration grants
-SELECT only to that Auth identity through RLS and leaves the existing public
-INSERT policy unchanged; it does not add update/delete policies.
-Anonymous and regular authenticated visitors retain insert-only access needed
-by the public enquiry form; they cannot read, update, or delete customer
-records. The frontend email check is only a UI gate; RLS is the security
-boundary. No service-role key is used in the frontend.
-
-The dashboard selects the existing `name` and `phone` enquiry columns and does
-not assume email or address columns exist. No service-role key is used in the
-frontend.
-To import the supplied party list, run
-[`supabase/import-customer-parties.sql`](./supabase/import-customer-parties.sql)
-in the same project's SQL Editor. It validates that the name and phone columns
-are text, stops if another required column cannot be populated, skips and
-reports exact name-and-phone matches, and returns import and duplicate counts.
-
-### Public customer reviews
-
-Run [`supabase/customer-reviews.sql`](./supabase/customer-reviews.sql) in the
-Supabase SQL Editor to create the separate `reviews` table. Customers can submit
-reviews with a pending status; only approved reviews are returned to the public
-site. Review approval is manual in Supabase SQL Editor, for example:
-
-```sql
-update public.reviews
-set status = 'approved'
-where id = '<review-id>' and status = 'pending';
+```bash
+dotnet user-secrets init --project backend\BuildKart.API
+dotnet user-secrets set "ConnectionStrings:BuildKart" "<your SQL Server connection string>" --project backend\BuildKart.API
+dotnet user-secrets set "Authentication:Jwt:SigningKey" "<a unique random secret of at least 32 characters>" --project backend\BuildKart.API
+dotnet user-secrets set "Payments:WebhookSecret" "<a unique random webhook HMAC secret>" --project backend\BuildKart.API
 ```
 
-The public website can read only the display fields of approved reviews and
-submit new pending reviews. The table's unique submission ID prevents retry
-attempts from creating duplicate reviews. The migration grants no public access
-to `customer_enquiries`.
+For deployments, use a managed secret store or environment variables such as `ConnectionStrings__BuildKart` and `Authentication__Jwt__SigningKey`. Configure `Authentication:Jwt:Issuer` and `Authentication:Jwt:Audience` to match the trusted token issuer. Without a configured signing key the API uses a temporary process-local key, so tokens will not survive a restart. No login or token-issuance endpoint or default administrator account is included.
 
-## Business details already wired into the UI
+To allow a different frontend origin, set `Cors:AllowedOrigins` (for example, `Cors__AllowedOrigins__0` in the environment). Keep this list limited to trusted origins.
 
-WhatsApp: 8317666756
+## Database setup (optional)
 
-Shop:
-Plot No. 19, H.No. 1-121/19, Sonata Lane, Miyapur, Allwyn X Roads, Hyderabad, Telangana.
+The SQL scripts are templates for an existing SQL Server database; they do not create a database or connect to a server. Select or create a database using your SQL Server tooling, then run `database\schema.sql` followed by `database\seed-data.sql`. The seed script inserts the storefront's sample product categories and products. These prices are examples and should be confirmed before use.
 
-Google Maps:
-https://maps.app.goo.gl/531atkbHnKo6R56E8?g_st=awb
+The backend uses EF Core SQL Server and does not apply migrations or seed data automatically. The schema script is the initial schema; if you change the EF models, update the SQL schema accordingly. For an existing database, run `database\payment-upgrade.sql` once to add the payment tracking fields before using the payment endpoints.
+The current database has not been seeded, so the storefront will show an empty catalogue until you choose to run the optional seed script.
+
+## Included features
+
+- Product catalogue for Aerocon Panels, Bison Boards, Roofing Sheets, and Elevation Planks
+- Search, category filters, and price sorting
+- Add, edit, and remove products, persisted in browser local storage
+- Area estimator with a selectable wastage margin
+- Cart quantity controls, wholesale discounts, and estimated GST
+- Customer, project, site, contact, and PIN details
+- WhatsApp quotation sharing and PDF quotation download
+- UPI advance estimates at 10% or 50%
+- Payment portal with full/20% advance cart previews when offline and API-backed orders/payment-status tracking when connected
+- Editable store contact and UPI settings
+- Responsive desktop and mobile layouts
+
+## Important
+
+The storefront reads its product catalogue from the API when available; the cart, customer quote details, and store settings remain in browser storage. Catalogue editing in the storefront is available only in local fallback mode; API-backed catalog changes require an authenticated admin workflow. Catalog rates and contact/payment details are sample defaults and should be confirmed before publishing. Without the backend, the payment portal provides a clearly labeled UI preview from the browser cart; it does not create an order, payment intent, or payment status. Preview UPI QR codes and app links can initiate a real transfer, but they are not tied to an order and cannot be verified or recorded by BuildKart. UPI handoffs for real orders also do not confirm payment. Real payment transactions remain Pending or Processing until a trusted server webhook verifies them. Configure `Payments:WebhookSecret` in backend secrets to accept signed payment confirmations; card/net-banking processing remains unavailable until a merchant gateway is integrated and its credentials are configured. Quotation totals are estimates, and delivery charges are not included. The API uses an example 18% tax rate that can be changed through `Sales:TaxRate`.
