@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, Calculator, CheckCircle2, CreditCard, Menu, MessageCircle, Phone, Plus, Search, Settings, ShoppingCart, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import CartPanel from './components/CartPanel.jsx';
 import Estimator from './components/Estimator.jsx';
 import PaymentDialog from './components/PaymentDialog.jsx';
@@ -34,7 +34,6 @@ function App() {
     const parameters = new URLSearchParams(window.location.search);
     return parameters.has('payOrder') || parameters.get('paymentPreview') === 'true';
   });
-  const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [selectedId, setSelectedId] = useState(INITIAL_PRODUCTS[0].id);
   const [length, setLength] = useState('20');
@@ -241,62 +240,43 @@ function App() {
     <>
       <header className="site-header">
         <div className="brand">
-          <span className="brand-mark"><Building2 size={26} strokeWidth={2.2} /></span>
+          <img className="brand-mark" src="/buildkart-logo.svg" alt="" />
           <span className="brand-copy">
-            <span className="brand-title"><strong>BuildKart</strong><b>V3.0 OFFICIAL</b></span>
-            <small><i /> Dispatch: <a href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer">{displayPhone}</a><span>•</span> UPI: <b>{settings.upi}</b></small>
+            <span className="brand-title"><strong>BuildKart-Store</strong></span>
+            <small>Your Dream, Our Construction</small>
           </span>
         </div>
         <label className="header-search">
-          <Search size={20} aria-hidden="true" />
-          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search panels, boards, sheets..." aria-label="Search materials" />
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Aerocon panels, Bison boards, roofing sheets, elevation planks..." aria-label="Search materials" />
+          <span className="header-search-action" aria-hidden="true"><Search size={21} /></span>
         </label>
         <div className="header-actions">
-          <button
-            type="button"
-            className="header-add"
-            onClick={() => openProductForm()}
-            aria-label="Add material"
-            title={catalogMode === 'api' ? 'Material creation is managed by the connected catalogue API.' : undefined}
-            disabled={catalogMode !== 'local'}
-          >
-            <Plus size={22} /><span>Add Material</span>
+          <a className="header-action" href="#cart" aria-label="Track Order">
+            <span className="header-action-icon" aria-hidden="true">🚚</span><span>Track Order</span>
+          </a>
+          <a className="header-action" aria-label="Help" href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer">
+            <span className="header-action-icon" aria-hidden="true">🎧</span><span>Help</span>
+          </a>
+          <button type="button" className="header-action" aria-label="Account" onClick={() => setSettingsOpen(true)}>
+            <span className="header-action-icon" aria-hidden="true">👤</span><span>Account</span>
           </button>
-          <button type="button" className="header-pay" aria-label="Pay Online" onClick={() => setPaymentOpen(true)}><CreditCard size={17} /><span>Pay Online</span></button>
-          <a className="header-help" aria-label="Live Help" href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle size={17} /><Phone className="whatsapp-phone" size={9} /> <span>Live Help</span></a>
-          <a className="header-cart" href="#cart" aria-label={`Cart, ${units} items`}><ShoppingCart size={20} /><span>Cart</span><b>{units}</b></a>
-          <button type="button" className="mobile-menu-button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          <a className="header-action header-action-cart" href="#cart" aria-label={`Cart, ${units} items`}>
+            <span className="header-action-icon" aria-hidden="true">🛒</span><span>Cart <b>{units}</b></span>
+          </a>
         </div>
-        <nav className={`main-nav ${menuOpen ? 'nav-open' : ''}`}>
-          <a href="#products" onClick={() => setMenuOpen(false)}>Materials</a>
-          <a href="#estimator" onClick={() => setMenuOpen(false)}>Estimator</a>
-          <a href="#cart" onClick={() => setMenuOpen(false)}>Quotations</a>
-          <button type="button" className="nav-settings" onClick={() => { setSettingsOpen(true); setMenuOpen(false); }}><Settings size={16} /> Store settings</button>
-        </nav>
       </header>
 
       <main>
         <section className="hero">
           <div className="hero-inner">
-            <div className="live-store-banner">
-              <div><i /><span><strong>v3.0 Live:</strong> Orders & WhatsApp to <b>{displayPhone}</b><span>•</span> UPI ID: <b>{settings.upi}</b></span></div>
-              <button type="button" onClick={() => window.location.reload()}>Reload Fresh Store</button>
-            </div>
-            <div className="hero-badges">
-              <span className="badge badge-gold">WHOLESALE TIER ACTIVE</span>
-              <span className="badge badge-green">5% OFF on 25+ pcs · 10% OFF on 50+ pcs</span>
-              <span className="badge badge-blue">Instant UPI Token Advance</span>
-            </div>
             <div className="hero-main">
               <div className="hero-copy">
-                <h1>Heavy Building &amp; Architectural Panels</h1>
+                <p className="hero-eyebrow">PREMIUM MATERIALS <span>|</span> BEST BRANDS <span>|</span> FAST DELIVERY</p>
+                <h1>
+                  <span>Heavy Building &amp;</span>{' '}
+                  <span className="hero-title-highlight">Architectural Panels</span>
+                </h1>
                 <p>Order Aerocon panels, Bison boards, roofing sheets, and elevation planks with project bill generation &amp; instant UPI token advance.</p>
-              </div>
-              <div className="hero-highlights">
-                <a className="button button-primary hero-estimator" href="#estimator"><Calculator size={19} /> Quick Area Estimator</a>
-                <div className="hero-proof"><span><CheckCircle2 size={23} /></span><div><strong>Genuine Brand Certified</strong><small>GST Invoice &amp; Bulk Rates</small></div></div>
               </div>
             </div>
           </div>
