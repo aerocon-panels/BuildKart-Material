@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { ArrowLeft, CreditCard, Search, ShoppingCart } from 'lucide-react';
 import CartPanel from './components/CartPanel.jsx';
 import Estimator from './components/Estimator.jsx';
 import PaymentDialog from './components/PaymentDialog.jsx';
 import ProductCard from './components/ProductCard.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
+import {
+  AEROCON_VARIANTS,
+  AEROCON_CATEGORY_PATH,
+  getAerocon75Variants,
+  getAeroconRoute,
+  getAeroconVariants,
+  isAeroconSizeVariant,
+} from './aeroconProducts.js';
 import { CATEGORIES, DEFAULT_SETTINGS, INITIAL_PRODUCTS, money, readStorage, writeStorage } from './data.js';
 import { loadCatalog } from './api.js';
 
@@ -18,6 +26,7 @@ function formatStorePhone(phone) {
 
 function App() {
   const [products, setProducts] = useState(() => readStorage('bk_products', INITIAL_PRODUCTS));
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [categories, setCategories] = useState(CATEGORIES);
   const [catalogMode, setCatalogMode] = useState('loading');
   const [catalogError, setCatalogError] = useState('');
@@ -40,6 +49,24 @@ function App() {
   const [width, setWidth] = useState('8');
   const [wastage, setWastage] = useState(5);
   const [advance, setAdvance] = useState(10);
+  const aeroconVariants = useMemo(() => getAeroconVariants(products), [products]);
+  const aerocon75Variants = useMemo(() => getAerocon75Variants(products), [products]);
+  const aeroconRoute = getAeroconRoute(currentPath);
+  const selectedAeroconVariant = aeroconRoute?.type === 'product'
+    ? aeroconVariants.find((variant) => variant.path === currentPath)
+    : null;
+  const selectedAeroconSizeVariant = aeroconRoute?.type === 'size-detail'
+    ? aerocon75Variants.find((variant) => variant.sku === aeroconRoute.sku)
+    : null;
+
+  useEffect(() => {
+    function handlePopState() {
+      setCurrentPath(window.location.pathname);
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,7 +74,27 @@ function App() {
       .then((catalog) => {
         setProducts(catalog.products);
         setCategories(catalog.categories);
-        setSelectedId(catalog.products[0]?.id || '');
+        setSelectedId(catalog.products.find((product) => !isAeroconSizeVariant(product))?.id || '');
+        const catalogVariants = getAeroconVariants(catalog.products);
+        const catalog75Variants = getAerocon75Variants(catalog.products);
+        setCart((current) => current.reduce((merged, item) => {
+          const currentVariant = item.product.category !== 'Aerocon Panels'
+            ? null
+            : isAeroconSizeVariant(item.product)
+              ? catalog75Variants.find((variant) => (
+                variant.sku === item.product.sku
+                || variant.sku.replace('-75-', '-175-') === item.product.sku
+              ))
+              : catalogVariants.find((variant) => variant.thickness === item.product.thickness && variant.priceAvailable);
+          const product = currentVariant || item.product;
+          const existing = merged.find((entry) => entry.product.id === product.id);
+          if (existing) {
+            existing.quantity += item.quantity;
+          } else {
+            merged.push({ product, quantity: item.quantity });
+          }
+          return merged;
+        }, []));
         setCatalogMode('api');
       })
       .catch((error) => {
@@ -74,9 +121,33 @@ function App() {
     if (!writeStorage('bk_settings', settings)) notify('Store settings could not be saved in this browser.');
   }, [settings]);
 
+  const storeProducts = useMemo(() => products.filter((product) => !isAeroconSizeVariant(product)), [products]);
+  const estimatorProducts = useMemo(() => [...storeProducts, ...aerocon75Variants], [storeProducts, aerocon75Variants]);
+  useEffect(() => {
+    if (catalogMode !== 'local') return;
+
+    setCart((current) => current.reduce((merged, item) => {
+      const isSizeVariant = isAeroconSizeVariant(item.product);
+      const canonicalSku = item.product.sku?.replace('-175-', '-75-');
+      const product = isSizeVariant
+        ? aerocon75Variants.find((variant) => variant.sku === canonicalSku) || item.product
+        : item.product;
+      const existingIndex = isSizeVariant
+        ? merged.findIndex((entry) => entry.product.sku === product.sku)
+        : -1;
+
+      if (existingIndex >= 0) {
+        const existing = merged[existingIndex];
+        merged[existingIndex] = { ...existing, quantity: existing.quantity + item.quantity };
+      } else {
+        merged.push({ product, quantity: item.quantity });
+      }
+      return merged;
+    }, []));
+  }, [catalogMode, aerocon75Variants]);
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const result = products.filter((product) => {
+    const result = storeProducts.filter((product) => {
       const categoryMatches = category === 'All materials' || product.category === category;
       const searchMatches = `${product.name} ${product.category} ${product.spec} ${product.description}`.toLowerCase().includes(query);
       return categoryMatches && searchMatches;
@@ -85,9 +156,15 @@ function App() {
     if (sort === 'price-high') result.sort((first, second) => second.rate - first.rate);
     if (sort === 'rating') result.sort((first, second) => (second.rating || 0) - (first.rating || 0));
     return result;
-  }, [products, category, search, sort]);
+  }, [storeProducts, category, search, sort]);
 
-  const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.product.rate * item.product.coverage, 0);
+  const isCheckoutRoute = currentPath === '/checkout';
+  const hasPriceOnRequest = cart.some(({ product }) => product.priceAvailable === false);
+  const subtotal = cart.reduce((sum, item) => (
+    item.product.priceAvailable === false
+      ? sum
+      : sum + item.quantity * item.product.rate * item.product.coverage
+  ), 0);
   const units = cart.reduce((sum, item) => sum + item.quantity, 0);
   const discount = units >= 50 ? 0.1 : units >= 25 ? 0.05 : 0;
   const discountedSubtotal = subtotal * (1 - discount);
@@ -98,6 +175,14 @@ function App() {
   function notify(message) {
     setNotice(message);
     window.setTimeout(() => setNotice(''), 2600);
+  }
+
+  function navigate(path) {
+    window.history.pushState({}, '', path);
+    setCurrentPath(window.location.pathname);
+    window.scrollTo(0, 0);
+    const hash = path.includes('#') ? path.slice(path.indexOf('#') + 1) : '';
+    if (hash) window.setTimeout(() => document.getElementById(hash)?.scrollIntoView(), 0);
   }
 
   function addToCart(product, quantity = 1) {
@@ -143,7 +228,7 @@ function App() {
 
   function quoteMessage() {
     const lines = cart.map(({ product, quantity }) => (
-      `• ${product.name} — ${quantity} pcs — ${money(quantity * product.coverage * product.rate)}`
+      `• ${product.name}${product.thickness ? ` (${product.thickness})` : ''} — ${quantity} pcs — ${product.priceAvailable === false ? 'Price on Request' : money(quantity * product.coverage * product.rate)}`
     ));
     return [
       `${settings.storeName.toUpperCase()} — MATERIAL QUOTATION`,
@@ -153,13 +238,14 @@ function App() {
       '',
       ...lines,
       '',
-      `Materials subtotal: ${money(subtotal)}`,
+      `Materials subtotal${hasPriceOnRequest ? ' (priced items only)' : ''}: ${money(subtotal)}`,
       `Wholesale discount (${discount * 100}%): -${money(subtotal * discount)}`,
       `Approx. GST (18%): ${money(gst)}`,
-      `Estimated total: ${money(total)}`,
+      `Estimated total${hasPriceOnRequest ? ' (before requested prices)' : ''}: ${money(total)}`,
       `UPI advance (${advance}%): ${money(total * advance / 100)}`,
       `Store contact: ${displayPhone}`,
       `UPI: ${settings.upi || 'Please confirm with the store'}`,
+      ...(hasPriceOnRequest ? ['Price on Request items require store confirmation before payment.'] : []),
       'Estimate only; delivery and final site measurements are subject to confirmation.',
     ].join('\n');
   }
@@ -198,13 +284,14 @@ function App() {
       if (settings.gstin) addText(`GSTIN: ${settings.gstin}`);
       y += 3;
       cart.forEach(({ product, quantity }) => {
-        addText(`${product.name} — ${quantity} pcs × ${product.coverage} sq ft — ${money(quantity * product.coverage * product.rate)}`);
+        addText(`${product.name}${product.thickness ? ` (${product.thickness})` : ''} — ${quantity} pcs — ${product.priceAvailable === false ? 'Price on Request' : `${product.coverage} sq ft — ${money(quantity * product.coverage * product.rate)}`}`);
       });
       y += 3;
-      addText(`Materials subtotal: ${money(subtotal)}`);
+      addText(`Materials subtotal${hasPriceOnRequest ? ' (priced items only)' : ''}: ${money(subtotal)}`);
       addText(`Wholesale discount (${discount * 100}%): -${money(subtotal * discount)}`);
       addText(`Approx. GST (18%): ${money(gst)}`);
-      addText(`Estimated total: ${money(total)}`, 13, 9);
+      addText(`Estimated total${hasPriceOnRequest ? ' (before requested prices)' : ''}: ${money(total)}`, 13, 9);
+      if (hasPriceOnRequest) addText('Price on Request items require store confirmation before payment.');
       addText(`UPI advance (${advance}%): ${money(total * advance / 100)}`);
       addText(`WhatsApp: +${settings.phone} · UPI: ${settings.upi || 'Not configured'}`);
       addText('Estimate only. Delivery and final site measurements are subject to confirmation.', 8, 6);
@@ -222,6 +309,23 @@ function App() {
 
   function payForProduct(product) {
     addToCart(product);
+    if (product.priceAvailable === false || hasPriceOnRequest) {
+      notify('Price on Request items must be confirmed by the store before payment.');
+      return;
+    }
+    setPaymentOpen(true);
+  }
+
+  function buyNowProduct(product) {
+    addToCart(product);
+    navigate('/checkout');
+  }
+
+  function openCartPayment() {
+    if (hasPriceOnRequest) {
+      notify('Price on Request items must be confirmed by the store before payment.');
+      return;
+    }
     setPaymentOpen(true);
   }
 
@@ -235,6 +339,29 @@ function App() {
     setSettingsOpen(false);
     notify('Store contact and payment settings saved.');
   }
+
+  const cartPanel = (
+    <CartPanel
+      cart={cart}
+      onQuantity={updateCartQuantity}
+      onRemove={(id) => setCart((current) => current.filter((item) => item.product.id !== id))}
+      customer={customer}
+      onCustomer={updateCustomer}
+      subtotal={subtotal}
+      units={units}
+      discount={discount}
+      gst={gst}
+      total={total}
+      phone={displayPhone}
+      upi={settings.upi}
+      advance={advance}
+      onAdvance={setAdvance}
+      onWhatsApp={sendWhatsApp}
+      onPdf={downloadPdf}
+      onPayment={openCartPayment}
+      checkoutMode={isCheckoutRoute}
+    />
+  );
 
   return (
     <>
@@ -267,6 +394,18 @@ function App() {
       </header>
 
       <main>
+        {isCheckoutRoute && (
+          <section className="section checkout-heading">
+            <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
+              <ArrowLeft size={16} /> Back to Products
+            </button>
+            <p className="eyebrow">BUILDKART CHECKOUT</p>
+            <h1>Review your products</h1>
+            <p>Check quantities and confirm any Price on Request items with the store before payment.</p>
+          </section>
+        )}
+
+        {!aeroconRoute && !isCheckoutRoute && <>
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-main">
@@ -324,15 +463,193 @@ function App() {
                   onEstimate={estimateProduct}
                   onEdit={catalogMode === 'local' ? openProductForm : undefined}
                   onDelete={catalogMode === 'local' ? deleteProduct : undefined}
+                  onOpen={product.id === 'aerocon-sandwich-panel' || (
+                    product.category === 'Aerocon Panels' && /aerocon sandwich/i.test(product.name)
+                  ) ? () => navigate(AEROCON_CATEGORY_PATH) : undefined}
+                  openHref={AEROCON_CATEGORY_PATH}
                 />
               ))}
             </div>
           ) : products.length > 0 ? <div className="empty-results">No matching products found. Try a different search or category.</div> : null}
           <p className="catalogue-footnote">Sample catalogue rates are estimates. Confirm availability, taxes, and delivery terms with the store.</p>
         </section>
+        </>}
 
+        {aeroconRoute?.type === 'category' && (
+          <section className="section catalogue-section aerocon-page">
+            <button type="button" className="button button-outline aerocon-back" onClick={() => navigate('/#products')}>
+              <ArrowLeft size={16} /> Back to Products
+            </button>
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">AEROCON PANELS</span>
+                <h2>Aerocon Sandwich Partition Panels</h2>
+                <p>Choose a panel thickness to view product details.</p>
+              </div>
+            </div>
+            {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading current variant prices…</p>}
+            <div className="product-grid aerocon-variant-grid">
+              {aeroconVariants.map((variant) => (
+                <ProductCard
+                  key={variant.slug}
+                  product={variant}
+                  onAdd={addToCart}
+                  onPay={buyNowProduct}
+                  onOpen={() => navigate(variant.path)}
+                  openHref={variant.path}
+                  variantActions
+                />
+              ))}
+            </div>
+            {aeroconVariants.some((variant) => !variant.priceAvailable) && (
+              <p className="catalogue-footnote" role="status">
+                Add Price on Request items to your cart; online payment stays unavailable until the store confirms their prices.
+              </p>
+            )}
+          </section>
+        )}
+
+        {aeroconRoute?.type === 'size-list' && (
+          <section className="section catalogue-section aerocon-page">
+            <div className="aerocon-detail-navigation">
+              <button type="button" className="button button-outline" onClick={() => navigate(AEROCON_CATEGORY_PATH)}>
+                <ArrowLeft size={16} /> Back to variants
+              </button>
+              <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
+                Back to Products
+              </button>
+            </div>
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">AEROCON PANELS · 75MM</span>
+                <h2>Aerocon Sandwich Partition Panel – 75mm</h2>
+                <p>Select a panel size to add it to your cart or continue directly to checkout.</p>
+              </div>
+            </div>
+            <div className="product-grid aerocon-size-grid">
+              {aerocon75Variants.map((variant) => (
+                <ProductCard
+                  key={variant.sku}
+                  product={variant}
+                  cardTitle="Aerocon Sandwich Partition Panels"
+                  onAdd={addToCart}
+                  onPay={payForProduct}
+                  onEstimate={estimateProduct}
+                  onOpen={() => navigate(variant.path)}
+                  openHref={variant.path}
+                  variantActions
+                  payActions
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {aeroconRoute?.type === 'size-detail' && selectedAeroconSizeVariant && (
+          <section className="section aerocon-detail-section">
+            <div className="aerocon-detail-navigation">
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => navigate(`/products/${AEROCON_VARIANTS[0].slug}`)}
+              >
+                <ArrowLeft size={16} /> Back to 75mm sizes
+              </button>
+              <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
+                Back to Products
+              </button>
+            </div>
+            <article className="aerocon-detail-card">
+              <div className="aerocon-detail-image">
+                <img src={selectedAeroconSizeVariant.image} alt={selectedAeroconSizeVariant.name} />
+              </div>
+              <div className="aerocon-detail-content">
+                <span className="eyebrow">AEROCON PANELS</span>
+                <h1>{selectedAeroconSizeVariant.name}</h1>
+                <p className="aerocon-detail-thickness">Thickness: {selectedAeroconSizeVariant.thickness}</p>
+                <p>{selectedAeroconSizeVariant.description}</p>
+                <div className="aerocon-detail-price">
+                  <small>Price per piece</small>
+                  <strong>{money(selectedAeroconSizeVariant.rate * selectedAeroconSizeVariant.coverage)}</strong>
+                  <span>{selectedAeroconSizeVariant.dimensions} · {selectedAeroconSizeVariant.coverage} SFT</span>
+                </div>
+                <div className="aerocon-detail-actions">
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    onClick={() => addToCart(selectedAeroconSizeVariant)}
+                  >
+                    <ShoppingCart size={16} /> Add to Cart
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-pay"
+                    onClick={() => buyNowProduct(selectedAeroconSizeVariant)}
+                  >
+                    <CreditCard size={16} /> Buy Now
+                  </button>
+                </div>
+              </div>
+            </article>
+          </section>
+        )}
+
+        {aeroconRoute?.type === 'product' && selectedAeroconVariant && (
+          <section className="section aerocon-detail-section">
+            <div className="aerocon-detail-navigation">
+              <button type="button" className="button button-outline" onClick={() => navigate(AEROCON_CATEGORY_PATH)}>
+                <ArrowLeft size={16} /> Back to variants
+              </button>
+              <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
+                Back to Products
+              </button>
+            </div>
+            <article className="aerocon-detail-card">
+              <div className="aerocon-detail-image">
+                <img src={selectedAeroconVariant.image} alt={selectedAeroconVariant.name} />
+              </div>
+              <div className="aerocon-detail-content">
+                <span className="eyebrow">AEROCON PANELS</span>
+                <h1>{selectedAeroconVariant.name}</h1>
+                <p className="aerocon-detail-thickness">Thickness: {selectedAeroconVariant.thickness}</p>
+                <p>{selectedAeroconVariant.description}</p>
+                {selectedAeroconVariant.priceAvailable ? (
+                  <div className="aerocon-detail-price">
+                    <small>Price per piece</small>
+                    <strong>{money(selectedAeroconVariant.rate * selectedAeroconVariant.coverage)}</strong>
+                    <span>{selectedAeroconVariant.spec}</span>
+                  </div>
+                ) : (
+                  <div className="aerocon-detail-price">
+                    <small>Price</small>
+                    <strong className="price-unavailable">Price on Request</strong>
+                    <span>Current price is not present in the product catalogue.</span>
+                  </div>
+                )}
+                <div className="aerocon-detail-actions">
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    onClick={() => addToCart(selectedAeroconVariant)}
+                  >
+                    <ShoppingCart size={16} /> Add to Cart
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-pay"
+                    onClick={() => buyNowProduct(selectedAeroconVariant)}
+                  >
+                    <CreditCard size={16} /> Buy Now
+                  </button>
+                </div>
+              </div>
+            </article>
+          </section>
+        )}
+
+        {isCheckoutRoute ? cartPanel : <>
         <Estimator
-          products={products}
+          products={estimatorProducts}
           selectedId={selectedId}
           onSelect={setSelectedId}
           length={length}
@@ -343,25 +660,8 @@ function App() {
           onWastage={setWastage}
           onAdd={addToCart}
         />
-        <CartPanel
-          cart={cart}
-          onQuantity={updateCartQuantity}
-          onRemove={(id) => setCart((current) => current.filter((item) => item.product.id !== id))}
-          customer={customer}
-          onCustomer={updateCustomer}
-          subtotal={subtotal}
-          units={units}
-          discount={discount}
-          gst={gst}
-          total={total}
-          phone={displayPhone}
-          upi={settings.upi}
-          advance={advance}
-          onAdvance={setAdvance}
-          onWhatsApp={sendWhatsApp}
-          onPdf={downloadPdf}
-          onPayment={() => setPaymentOpen(true)}
-        />
+        {cartPanel}
+        </>}
       </main>
 
       <footer className="site-footer">

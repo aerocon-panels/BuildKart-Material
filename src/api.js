@@ -74,6 +74,7 @@ export async function loadCatalog(signal) {
 
       return {
         id: product.id,
+        sku: product.sku,
         name: product.name,
         category: product.categoryName,
         spec: product.specification || product.unitOfMeasure,

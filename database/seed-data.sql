@@ -12,6 +12,38 @@ WHERE NOT EXISTS
     SELECT 1 FROM dbo.Categories AS existing WHERE existing.Name = source.Name
 );
 
+UPDATE product
+SET
+    product.Sku = source.NewSku,
+    product.Name = source.Name,
+    product.Description = source.Description,
+    product.Specification = source.Specification,
+    product.UnitPrice = source.UnitPrice
+FROM dbo.Products AS product
+INNER JOIN (VALUES
+    (N'AEROCON-SANDWICH-175-8FT', N'AEROCON-SANDWICH-75-8FT', N'Aerocon Sandwich Partition Panel – 8ft', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.', N'75mm - 8ft x 2ft', CAST(1360.00 AS decimal(18,2))),
+    (N'AEROCON-SANDWICH-175-9FT', N'AEROCON-SANDWICH-75-9FT', N'Aerocon Sandwich Partition Panel – 9ft', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.', N'75mm - 9ft x 2ft', CAST(1530.00 AS decimal(18,2))),
+    (N'AEROCON-SANDWICH-175-10FT', N'AEROCON-SANDWICH-75-10FT', N'Aerocon Sandwich Partition Panel – 10ft', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.', N'75mm - 10ft x 2ft', CAST(1700.00 AS decimal(18,2)))
+) AS source(OldSku, NewSku, Name, Description, Specification, UnitPrice)
+    ON source.OldSku = product.Sku
+WHERE NOT EXISTS
+(
+    SELECT 1 FROM dbo.Products AS existing WHERE existing.Sku = source.NewSku
+);
+
+UPDATE oldProduct
+SET oldProduct.IsActive = 0
+FROM dbo.Products AS oldProduct
+INNER JOIN (VALUES
+    (N'AEROCON-SANDWICH-175-8FT', N'AEROCON-SANDWICH-75-8FT'),
+    (N'AEROCON-SANDWICH-175-9FT', N'AEROCON-SANDWICH-75-9FT'),
+    (N'AEROCON-SANDWICH-175-10FT', N'AEROCON-SANDWICH-75-10FT')
+) AS source(OldSku, NewSku) ON source.OldSku = oldProduct.Sku
+WHERE EXISTS
+(
+    SELECT 1 FROM dbo.Products AS currentProduct WHERE currentProduct.Sku = source.NewSku
+);
+
 INSERT INTO dbo.Products
     (Sku, Name, Description, Specification, UnitPrice, UnitOfMeasure, CategoryId)
 SELECT
@@ -26,6 +58,15 @@ FROM (VALUES
     (N'AEROCON-SANDWICH-50', N'Aerocon Sandwich Panel',
      N'Lightweight insulated panel for partitions and exterior walls.',
      N'50mm - 8ft x 2ft', CAST(1360.00 AS decimal(18,2)), N'Aerocon Panels'),
+    (N'AEROCON-SANDWICH-75-8FT', N'Aerocon Sandwich Partition Panel – 8ft',
+     N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.',
+     N'75mm - 8ft x 2ft', CAST(1360.00 AS decimal(18,2)), N'Aerocon Panels'),
+    (N'AEROCON-SANDWICH-75-9FT', N'Aerocon Sandwich Partition Panel – 9ft',
+     N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.',
+     N'75mm - 9ft x 2ft', CAST(1530.00 AS decimal(18,2)), N'Aerocon Panels'),
+    (N'AEROCON-SANDWICH-75-10FT', N'Aerocon Sandwich Partition Panel – 10ft',
+     N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.',
+     N'75mm - 10ft x 2ft', CAST(1700.00 AS decimal(18,2)), N'Aerocon Panels'),
     (N'BISON-CEMENT-12', N'Bison Cement Board',
      N'Durable fibre cement board for interior and exterior use.',
      N'12mm - 8ft x 4ft', CAST(1856.00 AS decimal(18,2)), N'Bison Boards'),
@@ -41,3 +82,12 @@ WHERE NOT EXISTS
 (
     SELECT 1 FROM dbo.Products AS existing WHERE existing.Sku = source.Sku
 );
+
+UPDATE product
+SET product.Description = source.Description
+FROM dbo.Products AS product
+INNER JOIN (VALUES
+    (N'AEROCON-SANDWICH-75-8FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.'),
+    (N'AEROCON-SANDWICH-75-9FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.'),
+    (N'AEROCON-SANDWICH-75-10FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.')
+) AS source(Sku, Description) ON source.Sku = product.Sku;
