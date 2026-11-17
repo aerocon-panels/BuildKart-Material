@@ -13,6 +13,7 @@ public sealed class BuildKartDbContext(DbContextOptions<BuildKartDbContext> opti
     public DbSet<Quotation> Quotations => Set<Quotation>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -100,6 +101,16 @@ public sealed class BuildKartDbContext(DbContextOptions<BuildKartDbContext> opti
         {
             entity.HasIndex(user => user.UserName).IsUnique();
             entity.HasIndex(user => user.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.ToTable("ProductImages");
+            entity.HasKey(image => image.Id);
+            entity.Property(image => image.Image).IsRequired();
+            entity.Property(image => image.Thickness).IsRequired();
+            entity.Property(image => image.ImageUrl).IsRequired();
+            entity.Property(image => image.CreatedAtUtc).HasColumnType("datetime2");
         });
     }
 }

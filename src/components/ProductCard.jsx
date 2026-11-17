@@ -13,6 +13,7 @@ export default function ProductCard({
   cardTitle,
   variantActions = false,
   payActions = false,
+  hideCategory = false,
 }) {
   const priceAvailable = product.priceAvailable !== false;
   const title = cardTitle || product.name;
@@ -33,7 +34,7 @@ export default function ProductCard({
       )}
       <div className="product-art">
         <img src={product.image || '/product-images/material-1.jpg'} alt={product.name} loading="lazy" />
-        <span className="product-category">{product.label || product.category}</span>
+        {!hideCategory && <span className="product-category">{product.label || product.category}</span>}
         {(!variantActions || payActions) && <span className="bulk-badge">Bulk Wholesale</span>}
         {(!variantActions || payActions) && <span className="product-rating"><Star size={14} fill="currentColor" /> {product.rating || '4.8'} <small>({product.reviewCount || 34})</small></span>}
       </div>

@@ -87,6 +87,7 @@ if (!decimal.TryParse(taxRateSetting, NumberStyles.Number, CultureInfo.Invariant
 
 builder.Services.AddSingleton(new SalesTaxPolicy(taxRate));
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddHostedService<ProductImageWatcherService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();

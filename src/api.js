@@ -92,6 +92,24 @@ export async function loadCatalog(signal) {
   return { categories, products };
 }
 
+export async function loadProductImages(signal) {
+  return getCollection('product-images', signal);
+}
+
+export async function uploadProductImage({ file, image, thickness, sizeLabel, token }) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('image', image);
+  formData.append('thickness', thickness);
+  if (sizeLabel) formData.append('sizeLabel', sizeLabel);
+
+  return requestJson('product-images/upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+}
+
 export async function loadPaymentOrder(orderNumber, signal) {
   return requestJson(`payments/orders/${encodeURIComponent(orderNumber)}`, { signal });
 }

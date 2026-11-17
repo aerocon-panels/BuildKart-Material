@@ -4,6 +4,7 @@ import CartPanel from './components/CartPanel.jsx';
 import Estimator from './components/Estimator.jsx';
 import PaymentDialog from './components/PaymentDialog.jsx';
 import ProductCard from './components/ProductCard.jsx';
+import ProductImageAdmin from './components/ProductImageAdmin.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
 import {
@@ -15,7 +16,7 @@ import {
   isAeroconSizeVariant,
 } from './aeroconProducts.js';
 import { CATEGORIES, DEFAULT_SETTINGS, INITIAL_PRODUCTS, money, readStorage, writeStorage } from './data.js';
-import { loadCatalog } from './api.js';
+import { loadCatalog, loadProductImages } from './api.js';
 
 const CUSTOMER_DEFAULTS = { name: '', phone: '', project: '', address: '', pin: '' };
 
@@ -26,6 +27,8 @@ function formatStorePhone(phone) {
 
 function App() {
   const [products, setProducts] = useState(() => readStorage('bk_products', INITIAL_PRODUCTS));
+  const [productImages, setProductImages] = useState([]);
+  const [productImagesError, setProductImagesError] = useState('');
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [categories, setCategories] = useState(CATEGORIES);
   const [catalogMode, setCatalogMode] = useState('loading');
@@ -49,8 +52,14 @@ function App() {
   const [width, setWidth] = useState('8');
   const [wastage, setWastage] = useState(5);
   const [advance, setAdvance] = useState(10);
-  const aeroconVariants = useMemo(() => getAeroconVariants(products), [products]);
-  const aerocon75Variants = useMemo(() => getAerocon75Variants(products), [products]);
+  const aeroconVariants = useMemo(
+    () => getAeroconVariants(products, productImages),
+    [products, productImages],
+  );
+  const aerocon75Variants = useMemo(
+    () => getAerocon75Variants(products, productImages),
+    [products, productImages],
+  );
   const aeroconRoute = getAeroconRoute(currentPath);
   const selectedAeroconVariant = aeroconRoute?.type === 'product'
     ? aeroconVariants.find((variant) => variant.path === currentPath)
@@ -106,6 +115,42 @@ function App() {
 
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadProductImages(controller.signal)
+      .then((images) => {
+        setProductImages(images);
+        setProductImagesError('');
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        console.error('Unable to load product images.', error);
+        setProductImagesError(error.message);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  async function refreshProductImages(uploadedImage) {
+    setProductImages((current) => [
+      uploadedImage,
+      ...current.filter((image) => !(
+        image.image === uploadedImage.image
+        && image.thickness === uploadedImage.thickness
+        && image.sizeLabel === uploadedImage.sizeLabel
+      )),
+    ]);
+
+    try {
+      const images = await loadProductImages();
+      setProductImages(images);
+      setProductImagesError('');
+    } catch (error) {
+      setProductImagesError(error.message);
+      throw error;
+    }
+  }
 
   useEffect(() => {
     if (catalogMode === 'local' && !writeStorage('bk_products', products)) {
@@ -498,6 +543,7 @@ function App() {
                   onOpen={() => navigate(variant.path)}
                   openHref={variant.path}
                   variantActions
+                  hideCategory={variant.thickness === '75mm'}
                 />
               ))}
             </div>
@@ -506,6 +552,12 @@ function App() {
                 Add Price on Request items to your cart; online payment stays unavailable until the store confirms their prices.
               </p>
             )}
+            <ProductImageAdmin
+              defaultImage="aerocon-sandwich-partition-panel-75mm"
+              defaultThickness="75mm"
+              loadError={productImagesError}
+              onUploaded={refreshProductImages}
+            />
           </section>
         )}
 

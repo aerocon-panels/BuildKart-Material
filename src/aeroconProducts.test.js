@@ -45,10 +45,51 @@ test('exposes three independently priced 75mm panel sizes', () => {
   ]);
   assert.equal(new Set(variants.map(({ id }) => id)).size, 3);
   assert.equal(new Set(variants.map(({ sku }) => sku)).size, 3);
+  assert.deepEqual(variants.map(({ image }) => image), [
+    '/product-images/75mm/Aerocon_Panel_8x2ft.png',
+    '/product-images/75mm/Aerocon_Panel_9x2ft.png',
+    '/product-images/75mm/Aerocon_Panel_10x2ft.png',
+  ]);
   const descriptions = variants.map(({ description }) => description);
   assert.equal(new Set(descriptions).size, 3);
   assert.ok(descriptions.every((description) => description.length >= 180));
   assert.ok(variants.every(isAeroconSizeVariant));
+});
+
+test('uses active database image URLs for matching Aerocon image keys', () => {
+  const imageUrl = '/product-images/75mm/uploaded-8ft.png';
+  const variants = getAerocon75Variants([], [{
+    image: 'aerocon-sandwich-partition-panel-75mm-8ft',
+    thickness: '75mm',
+    sizeLabel: '8ft',
+    imageUrl,
+    isActive: true,
+  }]);
+
+  assert.equal(variants[0].image, imageUrl);
+  assert.equal(variants[1].image, '/product-images/75mm/Aerocon_Panel_9x2ft.png');
+});
+
+test('uses database image URLs on the Aerocon thickness cards', () => {
+  const variants = getAeroconVariants([], [
+    {
+      image: 'aerocon-sandwich-partition-panel-75mm',
+      thickness: '75mm',
+      imageUrl: '/product-images/75mm/uploaded-75mm.png',
+      isActive: true,
+    },
+    {
+      image: 'aerocon-sandwich-partition-panel-50mm',
+      thickness: '50mm',
+      imageUrl: '/product-images/50mm/uploaded-50mm.png',
+      isActive: true,
+    },
+  ]);
+
+  assert.deepEqual(variants.map(({ image }) => image), [
+    '/product-images/75mm/uploaded-75mm.png',
+    '/product-images/50mm/uploaded-50mm.png',
+  ]);
 });
 
 test('uses supplied 75mm size data and the catalog price for the 50mm variant', () => {
@@ -80,6 +121,7 @@ test('uses catalog price and IDs for each exact Aerocon size SKU', () => {
     spec: `75mm - ${variant.dimensions.replace('×', 'x')}`,
     rate: 85,
     coverage: variant.coverage,
+    image: '/product-images/material-1.jpg',
   }));
   const variants = getAerocon75Variants(products);
 
@@ -87,6 +129,11 @@ test('uses catalog price and IDs for each exact Aerocon size SKU', () => {
     [10, 1360],
     [11, 1530],
     [12, 1700],
+  ]);
+  assert.deepEqual(variants.map(({ image }) => image), [
+    '/product-images/75mm/Aerocon_Panel_8x2ft.png',
+    '/product-images/75mm/Aerocon_Panel_9x2ft.png',
+    '/product-images/75mm/Aerocon_Panel_10x2ft.png',
   ]);
 });
 

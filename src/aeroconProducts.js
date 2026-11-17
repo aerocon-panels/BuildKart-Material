@@ -6,6 +6,7 @@ export const AEROCON_VARIANTS = [
     name: 'Aerocon Sandwich Partition Panel – 75mm',
     thickness: '75mm',
     sku: 'AEROCON-SANDWICH-75-8FT',
+    image: '/product-images/75mm/aerocon-75mm.png',
   },
   {
     slug: 'aerocon-sandwich-partition-panel-50mm',
@@ -24,6 +25,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '8ft × 2ft',
     coverage: 16,
     price: 1360,
+    image: '/product-images/75mm/Aerocon_Panel_8x2ft.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-8ft',
     description: 'A practical choice for smaller partition sections and room layouts. Its lightweight 75mm aerated-concrete core offers fire resistance and sound insulation, while the 8ft × 2ft panel covers 16 SFT per piece for easy area planning.',
   },
@@ -35,6 +37,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '9ft × 2ft',
     coverage: 18,
     price: 1530,
+    image: '/product-images/75mm/Aerocon_Panel_9x2ft.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-9ft',
     description: 'Use the 9ft panel for taller partition runs with fewer joints along the wall. The lightweight 75mm aerated-concrete construction provides fire resistance and sound insulation, and each 9ft × 2ft piece covers 18 SFT.',
   },
@@ -46,6 +49,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '10ft × 2ft',
     coverage: 20,
     price: 1700,
+    image: '/product-images/75mm/Aerocon_Panel_10x2ft.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-10ft',
     description: 'The 10ft panel suits longer, uninterrupted partition sections and can reduce the number of joins across a wall. Its lightweight 75mm aerated-concrete core offers fire resistance and sound insulation, with 20 SFT covered per piece.',
   },
@@ -69,7 +73,15 @@ function findAeroconVariantSource(products, sku, thickness) {
     || aeroconProducts.find((product) => hasThickness(product, thickness));
 }
 
-export function getAerocon75Variants(products) {
+function findProductImage(productImages, image, thickness) {
+  return productImages.find((productImage) => (
+    productImage.isActive !== false
+    && productImage.image?.toLowerCase() === image.toLowerCase()
+    && productImage.thickness?.toLowerCase() === thickness.toLowerCase()
+  ))?.imageUrl;
+}
+
+export function getAerocon75Variants(products, productImages = []) {
   const aeroconProducts = products.filter((product) => /aerocon/i.test(product.category || ''));
   const fallbackProduct = aeroconProducts.find((product) => product.image) || aeroconProducts[0];
   const fallbackImage = fallbackProduct?.image || '/product-images/material-1.jpg';
@@ -93,7 +105,10 @@ export function getAerocon75Variants(products) {
       path: variant.path,
       spec: `Dimensions: ${variant.dimensions} · Area: ${coverage} SFT`,
       description: variant.description,
-      image: source?.image || fallbackImage,
+      image: findProductImage(productImages, variant.id, variant.thickness)
+        || variant.image
+        || source?.image
+        || fallbackImage,
       tone: source?.tone || 'sand',
       label: source?.label || fallbackProduct?.label || 'Wall Panels',
       rating: source?.rating || fallbackProduct?.rating,
@@ -105,13 +120,13 @@ export function getAerocon75Variants(products) {
   });
 }
 
-export function getAeroconVariants(products) {
+export function getAeroconVariants(products, productImages = []) {
   const aeroconProducts = products.filter((product) => /aerocon/i.test(product.category || ''));
   const fallbackImage = aeroconProducts.find((product) => product.image)?.image || '/product-images/material-1.jpg';
 
   return AEROCON_VARIANTS.map((variant) => {
     const source = variant.thickness === '75mm'
-      ? getAerocon75Variants(products)[0]
+      ? getAerocon75Variants(products, productImages)[0]
       : findAeroconVariantSource(products, variant.sku, variant.thickness);
     const rate = Number(source?.rate);
     const coverage = Number(source?.coverage);
@@ -126,7 +141,10 @@ export function getAeroconVariants(products) {
       thickness: variant.thickness,
       spec: source?.spec || `${variant.thickness} thickness`,
       description: source?.description || 'Description unavailable in the product catalogue.',
-      image: source?.image || fallbackImage,
+      image: findProductImage(productImages, variant.slug, variant.thickness)
+        || variant.image
+        || source?.image
+        || fallbackImage,
       tone: source?.tone || 'sand',
       label: 'Aerocon Panels',
       rate: priceAvailable ? rate : null,
