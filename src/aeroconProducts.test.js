@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  AEROCON_50_VARIANTS,
   AEROCON_75_VARIANTS,
   AEROCON_CATEGORY_PATH,
+  getAerocon50Variants,
   getAerocon75Variants,
   getAeroconRoute,
   getAeroconVariants,
@@ -26,12 +28,24 @@ test('exposes exactly the two requested Aerocon variants', () => {
   ]);
   assert.equal(variants[0].priceAvailable, true);
   assert.notEqual(variants[0].id, 'existing-75mm-panel');
-  assert.equal(variants[1].priceAvailable, false);
+  assert.equal(variants[1].priceAvailable, true);
+  assert.equal(variants[1].image, '/product-images/50mm/aerocon-50mm.png');
+  assert.equal(variants[1].dimensions, '8ft × 2ft');
+  assert.equal(variants[1].coverage, 16);
+  assert.equal(variants[1].rate * variants[1].coverage, 1360);
+  assert.equal(
+    variants[1].description,
+    'An ideal solution for lightweight and space-efficient interior partitions. The 50mm aerated-concrete panel provides reliable fire resistance and sound insulation while maximizing usable space. Perfect for residential and commercial applications, each 8ft × 2ft panel covers 16 sq. ft., making installation and area planning simple and convenient.',
+  );
 });
 
 test('exposes three independently priced 75mm panel sizes', () => {
   const variants = getAerocon75Variants([]);
 
+  assert.equal(
+    variants[0].description,
+    'A perfect choice for strong and durable partition walls in residential and commercial spaces. The 75mm lightweight aerated-concrete panel offers excellent fire resistance and sound insulation, making it ideal for creating comfortable and reliable room partitions. Each 8ft × 2ft panel covers 16 sq. ft., ensuring easy installation and efficient space planning.',
+  );
   assert.equal(variants.length, 3);
   assert.deepEqual(variants.map(({ name }) => name), [
     'Aerocon Sandwich Partition Panel – 8ft',
@@ -53,6 +67,24 @@ test('exposes three independently priced 75mm panel sizes', () => {
   const descriptions = variants.map(({ description }) => description);
   assert.equal(new Set(descriptions).size, 3);
   assert.ok(descriptions.every((description) => description.length >= 180));
+  assert.ok(variants.every(isAeroconSizeVariant));
+});
+
+test('exposes three independently priced 50mm panel sizes', () => {
+  const variants = getAerocon50Variants([]);
+
+  assert.equal(
+    variants[0].description,
+    'An ideal solution for lightweight and space-efficient interior partitions. The 50mm aerated-concrete panel provides reliable fire resistance and sound insulation while maximizing usable space. Perfect for residential and commercial applications, each 8ft × 2ft panel covers 16 sq. ft., making installation and area planning simple and convenient.',
+  );
+  assert.equal(variants.length, 3);
+  assert.deepEqual(variants.map(({ dimensions, coverage, rate }) => [dimensions, coverage, rate * coverage]), [
+    ['8ft × 2ft', 16, 1360],
+    ['9ft × 2ft', 18, 1530],
+    ['10ft × 2ft', 20, 1700],
+  ]);
+  assert.ok(variants.every(({ thickness }) => thickness === '50mm'));
+  assert.ok(variants.every(({ image }) => image === '/product-images/50mm/aerocon-50mm.png'));
   assert.ok(variants.every(isAeroconSizeVariant));
 });
 
@@ -169,8 +201,11 @@ test('maps category and individual product paths', () => {
     assert.deepEqual(getAeroconRoute(path.replace('-75mm-', '-175mm-')), { type: 'size-detail', sku });
   });
   assert.deepEqual(getAeroconRoute('/products/aerocon-sandwich-partition-panel-50mm'), {
-    type: 'product',
+    type: 'size-list',
     slug: 'aerocon-sandwich-partition-panel-50mm',
+  });
+  AEROCON_50_VARIANTS.forEach(({ path, sku }) => {
+    assert.deepEqual(getAeroconRoute(path), { type: 'size-detail', sku });
   });
   assert.equal(getAeroconRoute('/products/unknown'), null);
 });

@@ -10,6 +10,7 @@ import SettingsDialog from './components/SettingsDialog.jsx';
 import {
   AEROCON_VARIANTS,
   AEROCON_CATEGORY_PATH,
+  getAerocon50Variants,
   getAerocon75Variants,
   getAeroconRoute,
   getAeroconVariants,
@@ -60,12 +61,24 @@ function App() {
     () => getAerocon75Variants(products, productImages),
     [products, productImages],
   );
+  const aerocon50Variants = useMemo(
+    () => getAerocon50Variants(products, productImages),
+    [products, productImages],
+  );
   const aeroconRoute = getAeroconRoute(currentPath);
+  const aeroconSizeListVariants = aeroconRoute?.slug === AEROCON_VARIANTS[1].slug
+    ? aerocon50Variants
+    : aerocon75Variants;
+  const aeroconSizeListThickness = aeroconRoute?.slug === AEROCON_VARIANTS[1].slug ? '50mm' : '75mm';
+  const allAeroconSizeVariants = useMemo(
+    () => [...aerocon75Variants, ...aerocon50Variants],
+    [aerocon75Variants, aerocon50Variants],
+  );
   const selectedAeroconVariant = aeroconRoute?.type === 'product'
     ? aeroconVariants.find((variant) => variant.path === currentPath)
     : null;
   const selectedAeroconSizeVariant = aeroconRoute?.type === 'size-detail'
-    ? aerocon75Variants.find((variant) => variant.sku === aeroconRoute.sku)
+    ? allAeroconSizeVariants.find((variant) => variant.sku === aeroconRoute.sku)
     : null;
 
   useEffect(() => {
@@ -86,11 +99,13 @@ function App() {
         setSelectedId(catalog.products.find((product) => !isAeroconSizeVariant(product))?.id || '');
         const catalogVariants = getAeroconVariants(catalog.products);
         const catalog75Variants = getAerocon75Variants(catalog.products);
+        const catalog50Variants = getAerocon50Variants(catalog.products);
+        const catalogSizeVariants = [...catalog75Variants, ...catalog50Variants];
         setCart((current) => current.reduce((merged, item) => {
           const currentVariant = item.product.category !== 'Aerocon Panels'
             ? null
             : isAeroconSizeVariant(item.product)
-              ? catalog75Variants.find((variant) => (
+              ? catalogSizeVariants.find((variant) => (
                 variant.sku === item.product.sku
                 || variant.sku.replace('-75-', '-175-') === item.product.sku
               ))
@@ -167,15 +182,19 @@ function App() {
   }, [settings]);
 
   const storeProducts = useMemo(() => products.filter((product) => !isAeroconSizeVariant(product)), [products]);
-  const estimatorProducts = useMemo(() => [...storeProducts, ...aerocon75Variants], [storeProducts, aerocon75Variants]);
+  const estimatorProducts = useMemo(
+    () => [...storeProducts, ...allAeroconSizeVariants],
+    [storeProducts, allAeroconSizeVariants],
+  );
   useEffect(() => {
     if (catalogMode !== 'local') return;
 
+    const allAeroconSizeVariants = [...aerocon75Variants, ...aerocon50Variants];
     setCart((current) => current.reduce((merged, item) => {
       const isSizeVariant = isAeroconSizeVariant(item.product);
       const canonicalSku = item.product.sku?.replace('-175-', '-75-');
       const product = isSizeVariant
-        ? aerocon75Variants.find((variant) => variant.sku === canonicalSku) || item.product
+        ? allAeroconSizeVariants.find((variant) => variant.sku === canonicalSku) || item.product
         : item.product;
       const existingIndex = isSizeVariant
         ? merged.findIndex((entry) => entry.product.sku === product.sku)
@@ -189,7 +208,7 @@ function App() {
       }
       return merged;
     }, []));
-  }, [catalogMode, aerocon75Variants]);
+  }, [catalogMode, aerocon75Variants, aerocon50Variants]);
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
     const result = storeProducts.filter((product) => {
@@ -543,7 +562,8 @@ function App() {
                   onOpen={() => navigate(variant.path)}
                   openHref={variant.path}
                   variantActions
-                  hideCategory={variant.thickness === '75mm'}
+                  hideCategory={variant.thickness === '75mm' || variant.thickness === '50mm'}
+                  sizeCard={variant.thickness === '75mm' || variant.thickness === '50mm'}
                 />
               ))}
             </div>
@@ -573,17 +593,16 @@ function App() {
             </div>
             <div className="section-heading">
               <div>
-                <span className="eyebrow">AEROCON PANELS · 75MM</span>
-                <h2>Aerocon Sandwich Partition Panel – 75mm</h2>
+                <span className="eyebrow">AEROCON PANELS · {aeroconSizeListThickness.toUpperCase()}</span>
+                <h2>Aerocon Sandwich Partition Panel – {aeroconSizeListThickness}</h2>
                 <p>Select a panel size to add it to your cart or continue directly to checkout.</p>
               </div>
             </div>
             <div className="product-grid aerocon-size-grid">
-              {aerocon75Variants.map((variant) => (
+              {aeroconSizeListVariants.map((variant) => (
                 <ProductCard
                   key={variant.sku}
                   product={variant}
-                  cardTitle="Aerocon Sandwich Partition Panels"
                   onAdd={addToCart}
                   onPay={payForProduct}
                   onEstimate={estimateProduct}
@@ -591,6 +610,8 @@ function App() {
                   openHref={variant.path}
                   variantActions
                   payActions
+                  hideCategory
+                  sizeCard
                 />
               ))}
             </div>
@@ -603,23 +624,23 @@ function App() {
               <button
                 type="button"
                 className="button button-outline"
-                onClick={() => navigate(`/products/${AEROCON_VARIANTS[0].slug}`)}
+                onClick={() => navigate(`/products/${AEROCON_VARIANTS.find((variant) => variant.thickness === selectedAeroconSizeVariant.thickness).slug}`)}
               >
-                <ArrowLeft size={16} /> Back to 75mm sizes
+                <ArrowLeft size={16} /> Back to {selectedAeroconSizeVariant.thickness} sizes
               </button>
               <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
                 Back to Products
               </button>
             </div>
-            <article className="aerocon-detail-card">
+            <article className="aerocon-detail-card aerocon-size-detail-card">
               <div className="aerocon-detail-image">
                 <img src={selectedAeroconSizeVariant.image} alt={selectedAeroconSizeVariant.name} />
               </div>
               <div className="aerocon-detail-content">
                 <span className="eyebrow">AEROCON PANELS</span>
-                <h1>{selectedAeroconSizeVariant.name}</h1>
-                <p className="aerocon-detail-thickness">Thickness: {selectedAeroconSizeVariant.thickness}</p>
+                <h1>Aerocon Sandwich Partition Panel – {selectedAeroconSizeVariant.thickness}</h1>
                 <p>{selectedAeroconSizeVariant.description}</p>
+                <p className="aerocon-detail-thickness">Thickness: {selectedAeroconSizeVariant.thickness}</p>
                 <div className="aerocon-detail-price">
                   <small>Price per piece</small>
                   <strong>{money(selectedAeroconSizeVariant.rate * selectedAeroconSizeVariant.coverage)}</strong>

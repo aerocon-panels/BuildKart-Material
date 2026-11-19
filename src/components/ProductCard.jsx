@@ -14,12 +14,14 @@ export default function ProductCard({
   variantActions = false,
   payActions = false,
   hideCategory = false,
+  sizeCard = false,
 }) {
   const priceAvailable = product.priceAvailable !== false;
   const title = cardTitle || product.name;
+  const image = product.image || '/product-images/material-1.jpg';
 
   return (
-    <article className="product-card">
+    <article className={`product-card${sizeCard ? ' aerocon-size-card' : ''}`}>
       {onOpen && (
         <a
           className="product-card-link"
@@ -33,7 +35,14 @@ export default function ProductCard({
         </a>
       )}
       <div className="product-art">
-        <img src={product.image || '/product-images/material-1.jpg'} alt={product.name} loading="lazy" />
+        {sizeCard && (
+          <span
+            className="product-art-backdrop"
+            style={{ backgroundImage: `url("${image}")` }}
+            aria-hidden="true"
+          />
+        )}
+        <img className={sizeCard ? 'product-art-size-image' : undefined} src={image} alt={product.name} loading="lazy" />
         {!hideCategory && <span className="product-category">{product.label || product.category}</span>}
         {(!variantActions || payActions) && <span className="bulk-badge">Bulk Wholesale</span>}
         {(!variantActions || payActions) && <span className="product-rating"><Star size={14} fill="currentColor" /> {product.rating || '4.8'} <small>({product.reviewCount || 34})</small></span>}
@@ -58,13 +67,15 @@ export default function ProductCard({
         </div>
         <p>{product.description}</p>
         {variantActions && !payActions && <div className="product-thickness">Thickness: {product.thickness}</div>}
-        <div className="product-spec">
-          {product.dimensions
-            ? payActions
-              ? `${product.thickness} Thickness · ${product.dimensions.replace(' × ', ' x ')} · ${product.coverage} sq ft / piece`
-              : `Dimensions: ${product.dimensions} · Area: ${product.coverage} SFT`
-            : `${product.spec}${priceAvailable && product.coverage ? ` · ${product.coverage} sq ft / piece` : ''}`}
-        </div>
+        {!(variantActions && !payActions && !product.dimensions && product.thickness && product.spec?.trim().toLowerCase() === `${product.thickness} thickness`.toLowerCase()) && (
+          <div className="product-spec">
+            {product.dimensions
+              ? payActions
+                ? `${product.thickness} Thickness · ${product.dimensions.replace(' × ', ' x ')} · ${product.coverage} sq ft / piece`
+                : `Dimensions: ${product.dimensions} · Area: ${product.coverage} SFT`
+              : `${product.spec}${priceAvailable && product.coverage ? ` · ${product.coverage} sq ft / piece` : ''}`}
+          </div>
+        )}
         <div className="product-footer">
           <div className="price">
             {priceAvailable

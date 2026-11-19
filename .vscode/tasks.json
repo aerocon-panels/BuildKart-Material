@@ -95,6 +95,18 @@
 			"command": "copy \"c:\\Users\\NIKHIL DHOOPAL\\AppData\\Roaming\\Code\\agentSessionData\\dd56d84a-c64c-48be-9ea9-7e91f28967a0\\attachments\\310ca132-89ec-485e-b907-c0b4bac9f54a\\Pasted Image.png\" \"D:\\BuildKart-Material-main\\public\\product-images\\aerocon-panel.png\"",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Build storefront check",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

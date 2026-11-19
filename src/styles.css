@@ -853,13 +853,17 @@ body { background: #f7f8fb; color: #172033; }
 .price .price-unavailable, .aerocon-detail-price .price-unavailable { display: block; margin: 4px 0 0; color: #9c3d2c; font: 700 13px 'DM Sans', sans-serif; white-space: normal; }
 .aerocon-back { margin-bottom: 22px; }
 .aerocon-variant-grid { max-width: 860px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.aerocon-variant-grid .product-content { min-height: 310px; }
+.aerocon-variant-grid .product-content { min-height: 0; }
 .aerocon-variant-grid .product-actions { flex-wrap: wrap; justify-content: flex-end; }
 .aerocon-detail-section { padding-top: 30px; }
 .aerocon-detail-navigation { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .aerocon-detail-card { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); overflow: hidden; border: 1px solid #e4e8ef; border-radius: 14px; background: #fff; box-shadow: 0 4px 14px #18253b08; }
 .aerocon-detail-image { min-height: 370px; background: #eef0f4; }
 .aerocon-detail-image img { display: block; width: 100%; height: 100%; min-height: 370px; object-fit: cover; }
+.aerocon-size-detail-card { max-width: 760px; margin-inline: auto; }
+.aerocon-size-detail-card .aerocon-detail-image,
+.aerocon-size-detail-card .aerocon-detail-image img { height: 300px; min-height: 0; }
+.aerocon-size-detail-card .aerocon-detail-image img { object-fit: contain; background: #eef0f4; }
 .aerocon-detail-content { align-self: center; padding: clamp(22px, 4vw, 46px); }
 .aerocon-detail-content h1 { margin: 10px 0 14px; color: #172033; font: 800 clamp(24px, 3vw, 36px)/1.2 Manrope, sans-serif; }
 .aerocon-detail-content > p { color: #697589; font-size: 14px; line-height: 1.7; }
@@ -869,6 +873,22 @@ body { background: #f7f8fb; color: #172033; }
 .aerocon-detail-price strong { color: #1f2937; font: 800 24px Manrope, sans-serif; }
 .aerocon-detail-price > span { color: #697589; font-size: 11px; }
 .aerocon-detail-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.aerocon-size-detail-card .aerocon-detail-content {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 16px 24px;
+}
+.aerocon-size-detail-card .aerocon-detail-content h1 { margin: 6px 0 8px; font-size: 24px; }
+.aerocon-size-detail-card .aerocon-detail-content > p { margin: 0 0 6px; font-size: 12px; line-height: 1.45; }
+.aerocon-size-detail-card .aerocon-detail-content .aerocon-detail-thickness { margin: 0 0 4px; }
+.aerocon-size-detail-card .aerocon-detail-price {
+  gap: 4px;
+  margin: 6px 0 10px;
+  padding-top: 8px;
+  border-top: 1px solid #edf0eb;
+}
 .cart-product-image { width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
 .cart-price-notice { margin: 14px 0 0; padding: 11px 12px; border: 1px solid #f1d9a6; border-radius: 7px; background: #fff8e9; color: #87510b; font-size: 11px; line-height: 1.5; }
 .checkout-heading { padding-top: 30px; padding-bottom: 5px; }
@@ -884,7 +904,10 @@ body { background: #f7f8fb; color: #172033; }
   .aerocon-variant-grid .product-actions .button { min-height: 34px; padding: 7px 9px; font-size: 10px; }
   .aerocon-detail-card { grid-template-columns: 1fr; }
   .aerocon-detail-image, .aerocon-detail-image img { min-height: 220px; max-height: 290px; }
+  .aerocon-size-detail-card .aerocon-detail-image,
+  .aerocon-size-detail-card .aerocon-detail-image img { height: 220px; min-height: 0; }
   .aerocon-detail-content { padding: 22px 18px; }
+  .aerocon-size-detail-card .aerocon-detail-content { padding: 18px 18px 12px; }
   .aerocon-detail-actions .button { flex: 1 1 140px; }
   .cart-product-image { width: 37px; height: 37px; }
   .checkout-heading { padding-top: 20px; }
@@ -901,12 +924,37 @@ body { background: #f7f8fb; color: #172033; }
 .product-image-upload-status.error { color: #9c3d2c; }
 .product-image-upload-status.success { color: #287044; }
 .aerocon-size-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.aerocon-size-grid .product-art img { object-fit: contain; background-color: #d7dbe0; }
+.aerocon-size-grid .product-art { height: 280px; aspect-ratio: auto; }
+.aerocon-size-card .product-art-backdrop { position: absolute; inset: 0; background-position: center; background-size: cover; filter: blur(12px); opacity: .55; transform: scale(1.08); }
+.aerocon-size-card .product-art .product-art-size-image { position: relative; z-index: 1; object-fit: contain; }
+.aerocon-size-card .product-art::after { z-index: 2; }
+.aerocon-size-card .bulk-badge,
+.aerocon-size-card .product-rating { display: none; }
+.aerocon-size-card .product-content { min-height: 0; }
+.aerocon-size-card .product-title-row h3 { color: #172033; font-size: 16px; line-height: 1.35; }
+.aerocon-size-card .product-content > p { min-height: 0; margin: 10px 0 8px; color: #697589; font-size: 12px; line-height: 1.55; }
+.aerocon-size-card .product-thickness { margin: 8px 0 0; color: #53647b; font-size: 12px; }
+.aerocon-size-card .product-spec { margin-top: 12px; padding: 10px 0 0; border-top: 1px solid #edf0eb; color: #111827 !important; font-size: 10px; font-weight: 700; }
+.aerocon-size-card .product-footer { align-items: center; }
+.aerocon-size-card .price { color: #172033; font-size: 20px; }
+.aerocon-size-card .price small { color: #758094; }
+.aerocon-size-card .product-estimate { width: 100%; margin-top: 12px; min-height: 38px; border: 0; border-radius: 7px; background: #eef3f7; color: #53647b; font-size: 11px; }
 @media (max-width: 900px) {
   .aerocon-size-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   .aerocon-size-grid { grid-template-columns: 1fr; }
+  .aerocon-size-grid .aerocon-size-card { display: block; }
+  .aerocon-size-grid .aerocon-size-card .product-art { height: 280px; aspect-ratio: auto; }
+  .aerocon-size-card .product-content { min-height: 0; padding: 15px; }
+  .aerocon-size-card .product-title-row h3 { font-size: 16px; }
+  .aerocon-size-card .product-content > p { min-height: 0; font-size: 12px; line-height: 1.55; }
+  .aerocon-size-card .product-thickness { font-size: 12px; }
+  .aerocon-size-card .product-spec { font-size: 10px; }
+  .aerocon-size-card .product-footer { flex-wrap: nowrap; }
+  .aerocon-size-card .price { font-size: 18px; }
+  .aerocon-size-card .product-actions { flex-wrap: nowrap; }
+  .aerocon-size-card .product-actions .button { min-height: 36px; padding: 7px 9px; font-size: 10px; }
   .product-image-upload-form { grid-template-columns: 1fr; }
   .product-image-upload-form .product-image-file, .product-image-upload-status { grid-column: auto; }
 }

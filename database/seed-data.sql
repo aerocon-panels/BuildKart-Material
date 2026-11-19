@@ -56,10 +56,10 @@ SELECT
     category.Id
 FROM (VALUES
     (N'AEROCON-SANDWICH-50', N'Aerocon Sandwich Panel',
-     N'Lightweight insulated panel for partitions and exterior walls.',
+     N'An ideal solution for lightweight and space-efficient interior partitions. The 50mm aerated-concrete panel provides reliable fire resistance and sound insulation while maximizing usable space. Perfect for residential and commercial applications, each 8ft × 2ft panel covers 16 sq. ft., making installation and area planning simple and convenient.',
      N'50mm - 8ft x 2ft', CAST(1360.00 AS decimal(18,2)), N'Aerocon Panels'),
     (N'AEROCON-SANDWICH-75-8FT', N'Aerocon Sandwich Partition Panel – 8ft',
-     N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.',
+     N'A perfect choice for strong and durable partition walls in residential and commercial spaces. The 75mm lightweight aerated-concrete panel offers excellent fire resistance and sound insulation, making it ideal for creating comfortable and reliable room partitions. Each 8ft × 2ft panel covers 16 sq. ft., ensuring easy installation and efficient space planning.',
      N'75mm - 8ft x 2ft', CAST(1360.00 AS decimal(18,2)), N'Aerocon Panels'),
     (N'AEROCON-SANDWICH-75-9FT', N'Aerocon Sandwich Partition Panel – 9ft',
      N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.',
@@ -87,7 +87,8 @@ UPDATE product
 SET product.Description = source.Description
 FROM dbo.Products AS product
 INNER JOIN (VALUES
-    (N'AEROCON-SANDWICH-75-8FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.'),
+    (N'AEROCON-SANDWICH-50', N'An ideal solution for lightweight and space-efficient interior partitions. The 50mm aerated-concrete panel provides reliable fire resistance and sound insulation while maximizing usable space. Perfect for residential and commercial applications, each 8ft × 2ft panel covers 16 sq. ft., making installation and area planning simple and convenient.'),
+    (N'AEROCON-SANDWICH-75-8FT', N'A perfect choice for strong and durable partition walls in residential and commercial spaces. The 75mm lightweight aerated-concrete panel offers excellent fire resistance and sound insulation, making it ideal for creating comfortable and reliable room partitions. Each 8ft × 2ft panel covers 16 sq. ft., ensuring easy installation and efficient space planning.'),
     (N'AEROCON-SANDWICH-75-9FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.'),
     (N'AEROCON-SANDWICH-75-10FT', N'Lightweight sandwich panel with core of aerated concrete. Fast installation, fire resistant, and sound insulating.')
 ) AS source(Sku, Description) ON source.Sku = product.Sku;
