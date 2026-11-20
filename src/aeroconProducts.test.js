@@ -27,6 +27,7 @@ test('exposes exactly the two requested Aerocon variants', () => {
     'Aerocon Sandwich Partition Panel – 50mm',
   ]);
   assert.equal(variants[0].priceAvailable, true);
+  assert.equal(variants[0].rate * variants[0].coverage, 1680);
   assert.notEqual(variants[0].id, 'existing-75mm-panel');
   assert.equal(variants[1].priceAvailable, true);
   assert.equal(variants[1].image, '/product-images/50mm/aerocon-50mm.png');
@@ -59,11 +60,7 @@ test('exposes three independently priced 75mm panel sizes', () => {
   ]);
   assert.equal(new Set(variants.map(({ id }) => id)).size, 3);
   assert.equal(new Set(variants.map(({ sku }) => sku)).size, 3);
-  assert.deepEqual(variants.map(({ image }) => image), [
-    '/product-images/75mm/Aerocon_Panel_8x2ft.png',
-    '/product-images/75mm/Aerocon_Panel_9x2ft.png',
-    '/product-images/75mm/Aerocon_Panel_10x2ft.png',
-  ]);
+  assert.ok(variants.every(({ image }) => image === '/product-images/75mm/aerocon-75mm.png'));
   const descriptions = variants.map(({ description }) => description);
   assert.equal(new Set(descriptions).size, 3);
   assert.ok(descriptions.every((description) => description.length >= 180));
@@ -99,7 +96,7 @@ test('uses active database image URLs for matching Aerocon image keys', () => {
   }]);
 
   assert.equal(variants[0].image, imageUrl);
-  assert.equal(variants[1].image, '/product-images/75mm/Aerocon_Panel_9x2ft.png');
+  assert.equal(variants[1].image, '/product-images/75mm/aerocon-75mm.png');
 });
 
 test('uses database image URLs on the Aerocon thickness cards', () => {
@@ -162,11 +159,7 @@ test('uses catalog price and IDs for each exact Aerocon size SKU', () => {
     [11, 1530],
     [12, 1700],
   ]);
-  assert.deepEqual(variants.map(({ image }) => image), [
-    '/product-images/75mm/Aerocon_Panel_8x2ft.png',
-    '/product-images/75mm/Aerocon_Panel_9x2ft.png',
-    '/product-images/75mm/Aerocon_Panel_10x2ft.png',
-  ]);
+  assert.ok(variants.every(({ image }) => image === '/product-images/75mm/aerocon-75mm.png'));
 });
 
 test('maps previously saved 1.75mm SKUs to their 75mm variants', () => {

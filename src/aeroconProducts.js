@@ -7,6 +7,8 @@ export const AEROCON_VARIANTS = [
     thickness: '75mm',
     sku: 'AEROCON-SANDWICH-75-8FT',
     image: '/product-images/75mm/aerocon-75mm.png',
+    coverage: 16,
+    rate: 105,
   },
   {
     slug: 'aerocon-sandwich-partition-panel-50mm',
@@ -30,7 +32,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '8ft × 2ft',
     coverage: 16,
     price: 1360,
-    image: '/product-images/75mm/Aerocon_Panel_8x2ft.png',
+    image: '/product-images/75mm/aerocon-75mm.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-8ft',
     description: 'A perfect choice for strong and durable partition walls in residential and commercial spaces. The 75mm lightweight aerated-concrete panel offers excellent fire resistance and sound insulation, making it ideal for creating comfortable and reliable room partitions. Each 8ft × 2ft panel covers 16 sq. ft., ensuring easy installation and efficient space planning.',
   },
@@ -42,7 +44,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '9ft × 2ft',
     coverage: 18,
     price: 1530,
-    image: '/product-images/75mm/Aerocon_Panel_9x2ft.png',
+    image: '/product-images/75mm/aerocon-75mm.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-9ft',
     description: 'Use the 9ft panel for taller partition runs with fewer joints along the wall. The lightweight 75mm aerated-concrete construction provides fire resistance and sound insulation, and each 9ft × 2ft piece covers 18 SFT.',
   },
@@ -54,7 +56,7 @@ export const AEROCON_75_VARIANTS = [
     dimensions: '10ft × 2ft',
     coverage: 20,
     price: 1700,
-    image: '/product-images/75mm/Aerocon_Panel_10x2ft.png',
+    image: '/product-images/75mm/aerocon-75mm.png',
     path: '/products/aerocon-sandwich-partition-panel-75mm-10ft',
     description: 'The 10ft panel suits longer, uninterrupted partition sections and can reduce the number of joins across a wall. Its lightweight 75mm aerated-concrete core offers fire resistance and sound insulation, with 20 SFT covered per piece.',
   },
@@ -209,8 +211,8 @@ export function getAeroconVariants(products, productImages = []) {
     const source = variant.thickness === '75mm'
       ? getAerocon75Variants(products, productImages)[0]
       : findAeroconVariantSource(products, variant.sku, variant.thickness);
-    const rate = Number(source?.rate || variant.rate);
-    const coverage = Number(source?.coverage || variant.coverage);
+    const rate = Number(variant.rate ?? source?.rate);
+    const coverage = Number(variant.coverage ?? source?.coverage);
     const priceAvailable = Number.isFinite(rate) && rate > 0 && Number.isFinite(coverage) && coverage > 0;
 
     return {

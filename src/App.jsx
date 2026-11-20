@@ -16,7 +16,17 @@ import {
   getAeroconVariants,
   isAeroconSizeVariant,
 } from './aeroconProducts.js';
-import { CATEGORIES, DEFAULT_SETTINGS, INITIAL_PRODUCTS, money, readStorage, writeStorage } from './data.js';
+import {
+  BISON_BOARDS_CATEGORY_PATH,
+  CATEGORIES,
+  DEFAULT_SETTINGS,
+  ensureBisonBoardProducts,
+  INITIAL_PRODUCTS,
+  money,
+  readStorage,
+  restoreAeroconDefaultRate,
+  writeStorage,
+} from './data.js';
 import { loadCatalog, loadProductImages } from './api.js';
 
 const CUSTOMER_DEFAULTS = { name: '', phone: '', project: '', address: '', pin: '' };
@@ -27,7 +37,9 @@ function formatStorePhone(phone) {
 }
 
 function App() {
-  const [products, setProducts] = useState(() => readStorage('bk_products', INITIAL_PRODUCTS));
+  const [products, setProducts] = useState(() => ensureBisonBoardProducts(
+    restoreAeroconDefaultRate(readStorage('bk_products', INITIAL_PRODUCTS)),
+  ));
   const [productImages, setProductImages] = useState([]);
   const [productImagesError, setProductImagesError] = useState('');
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
@@ -66,6 +78,11 @@ function App() {
     [products, productImages],
   );
   const aeroconRoute = getAeroconRoute(currentPath);
+  const isBisonCategoryRoute = currentPath === BISON_BOARDS_CATEGORY_PATH;
+  const bisonProducts = useMemo(
+    () => products.filter((product) => product.category === 'Bison Boards'),
+    [products],
+  );
   const aeroconSizeListVariants = aeroconRoute?.slug === AEROCON_VARIANTS[1].slug
     ? aerocon50Variants
     : aerocon75Variants;
@@ -181,10 +198,13 @@ function App() {
     if (!writeStorage('bk_settings', settings)) notify('Store settings could not be saved in this browser.');
   }, [settings]);
 
-  const storeProducts = useMemo(() => products.filter((product) => !isAeroconSizeVariant(product)), [products]);
+  const storeProducts = useMemo(
+    () => products.filter((product) => !isAeroconSizeVariant(product) && !product.isBisonVariant),
+    [products],
+  );
   const estimatorProducts = useMemo(
-    () => [...storeProducts, ...allAeroconSizeVariants],
-    [storeProducts, allAeroconSizeVariants],
+    () => [...storeProducts, ...bisonProducts.filter((product) => product.isBisonVariant), ...allAeroconSizeVariants],
+    [storeProducts, bisonProducts, allAeroconSizeVariants],
   );
   useEffect(() => {
     if (catalogMode !== 'local') return;
@@ -211,16 +231,16 @@ function App() {
   }, [catalogMode, aerocon75Variants, aerocon50Variants]);
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const result = storeProducts.filter((product) => {
+    const sourceProducts = category === 'Bison Boards' ? bisonProducts : storeProducts;
+    const result = sourceProducts.filter((product) => {
       const categoryMatches = category === 'All materials' || product.category === category;
       const searchMatches = `${product.name} ${product.category} ${product.spec} ${product.description}`.toLowerCase().includes(query);
       return categoryMatches && searchMatches;
     });
     if (sort === 'price-low') result.sort((first, second) => first.rate - second.rate);
     if (sort === 'price-high') result.sort((first, second) => second.rate - first.rate);
-    if (sort === 'rating') result.sort((first, second) => (second.rating || 0) - (first.rating || 0));
-    return result;
-  }, [storeProducts, category, search, sort]);
+    return category === 'Bison Boards' ? result.slice(0, 5) : result;
+  }, [storeProducts, bisonProducts, category, search, sort]);
 
   const isCheckoutRoute = currentPath === '/checkout';
   const hasPriceOnRequest = cart.some(({ product }) => product.priceAvailable === false);
@@ -469,7 +489,7 @@ function App() {
           </section>
         )}
 
-        {!aeroconRoute && !isCheckoutRoute && <>
+        {!aeroconRoute && !isBisonCategoryRoute && !isCheckoutRoute && <>
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-main">
@@ -502,7 +522,6 @@ function App() {
                 <option value="featured">Featured</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
               </select>
             </label>
           </div>
@@ -518,7 +537,52 @@ function App() {
           {formOpen && <ProductForm product={editingProduct} onSave={saveProduct} onClose={() => { setFormOpen(false); setEditingProduct(null); }} />}
           {catalogMode === 'loading' ? null : filteredProducts.length > 0 ? (
             <div className="product-grid">
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product) => {
+                const isAeroconProduct = product.id === 'aerocon-sandwich-panel' || (
+                  product.category === 'Aerocon Panels' && /aerocon sandwich/i.test(product.name)
+                );
+                const opensBisonCategory = product.category === 'Bison Boards' && !product.isBisonVariant;
+                const openHref = opensBisonCategory ? BISON_BOARDS_CATEGORY_PATH : AEROCON_CATEGORY_PATH;
+
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAdd={addToCart}
+                    onPay={payForProduct}
+                    onEstimate={estimateProduct}
+                    onEdit={catalogMode === 'local' ? openProductForm : undefined}
+                    onDelete={catalogMode === 'local' ? deleteProduct : undefined}
+                    onOpen={isAeroconProduct
+                      ? () => navigate(AEROCON_CATEGORY_PATH)
+                      : opensBisonCategory
+                        ? () => navigate(BISON_BOARDS_CATEGORY_PATH)
+                        : undefined}
+                    openHref={openHref}
+                  />
+                );
+              })}
+            </div>
+          ) : products.length > 0 ? <div className="empty-results">No matching products found. Try a different search or category.</div> : null}
+          <p className="catalogue-footnote">Sample catalogue rates are estimates. Confirm availability, taxes, and delivery terms with the store.</p>
+        </section>
+        </>}
+
+        {isBisonCategoryRoute && (
+          <section className="section catalogue-section bison-page">
+            <button type="button" className="button button-outline aerocon-back" onClick={() => navigate('/#products')}>
+              <ArrowLeft size={16} /> Back to Products
+            </button>
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">BISON BOARDS</span>
+                <h2>Bison Cement Bonded Particle Boards</h2>
+                <p>Choose a board size and grade to add it to your project.</p>
+              </div>
+            </div>
+            {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading Bison board options…</p>}
+            <div className="product-grid bison-size-grid">
+              {bisonProducts.slice(0, 5).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -527,17 +591,11 @@ function App() {
                   onEstimate={estimateProduct}
                   onEdit={catalogMode === 'local' ? openProductForm : undefined}
                   onDelete={catalogMode === 'local' ? deleteProduct : undefined}
-                  onOpen={product.id === 'aerocon-sandwich-panel' || (
-                    product.category === 'Aerocon Panels' && /aerocon sandwich/i.test(product.name)
-                  ) ? () => navigate(AEROCON_CATEGORY_PATH) : undefined}
-                  openHref={AEROCON_CATEGORY_PATH}
                 />
               ))}
             </div>
-          ) : products.length > 0 ? <div className="empty-results">No matching products found. Try a different search or category.</div> : null}
-          <p className="catalogue-footnote">Sample catalogue rates are estimates. Confirm availability, taxes, and delivery terms with the store.</p>
-        </section>
-        </>}
+          </section>
+        )}
 
         {aeroconRoute?.type === 'category' && (
           <section className="section catalogue-section aerocon-page">

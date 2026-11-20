@@ -1,4 +1,4 @@
-import { Calculator, CreditCard, Pencil, Plus, ShoppingCart, Star, Trash2 } from 'lucide-react';
+import { Calculator, CreditCard, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { money } from '../data.js';
 
 export default function ProductCard({
@@ -43,9 +43,6 @@ export default function ProductCard({
           />
         )}
         <img className={sizeCard ? 'product-art-size-image' : undefined} src={image} alt={product.name} loading="lazy" />
-        {!hideCategory && <span className="product-category">{product.label || product.category}</span>}
-        {(!variantActions || payActions) && <span className="bulk-badge">Bulk Wholesale</span>}
-        {(!variantActions || payActions) && <span className="product-rating"><Star size={14} fill="currentColor" /> {product.rating || '4.8'} <small>({product.reviewCount || 34})</small></span>}
       </div>
       <div className="product-content">
         <div className="product-title-row">
@@ -69,7 +66,14 @@ export default function ProductCard({
         {variantActions && !payActions && <div className="product-thickness">Thickness: {product.thickness}</div>}
         {!(variantActions && !payActions && !product.dimensions && product.thickness && product.spec?.trim().toLowerCase() === `${product.thickness} thickness`.toLowerCase()) && (
           <div className="product-spec">
-            {product.dimensions
+            {sizeCard ? (
+              <>
+                <strong className="aerocon-size-highlight">{product.thickness} Thickness</strong>
+                {' · '}
+                <strong className="aerocon-size-highlight">{product.dimensions}</strong>
+                {' · '}{product.coverage} sq ft / piece
+              </>
+            ) : product.dimensions
               ? payActions
                 ? `${product.thickness} Thickness · ${product.dimensions.replace(' × ', ' x ')} · ${product.coverage} sq ft / piece`
                 : `Dimensions: ${product.dimensions} · Area: ${product.coverage} SFT`

@@ -5,6 +5,8 @@ export const CATEGORIES = [
   'Elevation Planks',
 ];
 
+export const BISON_BOARDS_CATEGORY_PATH = '/categories/bison-cement-bonded-particle-boards';
+
 export const INITIAL_PRODUCTS = [
   {
     id: 'aerocon-sandwich-panel',
@@ -35,6 +37,50 @@ export const INITIAL_PRODUCTS = [
     reviewCount: 52,
   },
   {
+    id: 'bison-cement-board-6mm',
+    name: 'Bison Cement Bonded Particle Board - 6mm',
+    category: 'Bison Boards',
+    spec: '6mm Standard Grade • 8ft x 4ft Sheet',
+    rate: 32,
+    coverage: 32,
+    description: 'Lightweight cement-bonded board for interior partitions, wall linings, and general-purpose building applications.',
+    tone: 'stone',
+    image: '/product-images/material-2.jpg',
+  },
+  {
+    id: 'bison-cement-board-8mm',
+    name: 'Bison Cement Bonded Particle Board - 8mm',
+    category: 'Bison Boards',
+    spec: '8mm General Grade • 8ft x 4ft Sheet',
+    rate: 38,
+    coverage: 32,
+    description: 'Versatile cement board for durable interior walls, ceilings, and partition work in residential and commercial spaces.',
+    tone: 'stone',
+    image: '/product-images/material-2.jpg',
+  },
+  {
+    id: 'bison-cement-board-16mm',
+    name: 'Bison Cement Bonded Particle Board - 16mm',
+    category: 'Bison Boards',
+    spec: '16mm Heavy Grade • 8ft x 4ft Sheet',
+    rate: 52,
+    coverage: 32,
+    description: 'Thicker cement-bonded board for applications that need a sturdy, durable sheet with reliable moisture resistance.',
+    tone: 'stone',
+    image: '/product-images/material-2.jpg',
+  },
+  {
+    id: 'bison-cement-board-18mm',
+    name: 'Bison Cement Bonded Particle Board - 18mm',
+    category: 'Bison Boards',
+    spec: '18mm Extra Heavy Grade • 8ft x 4ft Sheet',
+    rate: 58,
+    coverage: 32,
+    description: 'Extra-thick cement-bonded board for robust partitions and building applications requiring a heavier sheet.',
+    tone: 'stone',
+    image: '/product-images/material-2.jpg',
+  },
+  {
     id: 'colour-coated-roofing-sheet',
     name: 'Color Coated Corrugated Roofing Sheets',
     category: 'Roofing Sheets',
@@ -63,6 +109,49 @@ export const INITIAL_PRODUCTS = [
     reviewCount: 41,
   },
 ];
+
+export function restoreAeroconDefaultRate(products) {
+  return products.map((product) => (
+    product.id === 'aerocon-sandwich-panel' && Number(product.rate) === 105
+      ? { ...product, rate: 85 }
+      : product
+  ));
+}
+
+export function ensureBisonBoardProducts(products) {
+  const seenIds = new Set();
+  const seenNames = new Set();
+  const uniqueProducts = products.filter((product) => {
+    if (product.category !== 'Bison Boards') return true;
+
+    const id = product.id === undefined ? '' : String(product.id);
+    const name = product.name?.trim().toLowerCase() || '';
+    if ((id && seenIds.has(id)) || (name && seenNames.has(name))) return false;
+    if (id) seenIds.add(id);
+    if (name) seenNames.add(name);
+    return true;
+  });
+  const bisonProducts = uniqueProducts.filter((product) => product.category === 'Bison Boards');
+
+  for (const product of INITIAL_PRODUCTS.filter((item) => item.category === 'Bison Boards')) {
+    if (bisonProducts.length >= 5) break;
+    const name = product.name.trim().toLowerCase();
+    if (seenIds.has(String(product.id)) || seenNames.has(name)) continue;
+
+    uniqueProducts.push(product);
+    bisonProducts.push(product);
+    seenIds.add(String(product.id));
+    seenNames.add(name);
+  }
+
+  let hasParentProduct = false;
+  return uniqueProducts.map((product) => {
+    if (product.category !== 'Bison Boards') return product;
+    const isBisonVariant = hasParentProduct;
+    hasParentProduct = true;
+    return { ...product, isBisonVariant };
+  });
+}
 
 export const DEFAULT_SETTINGS = {
   phone: '918317666756',
