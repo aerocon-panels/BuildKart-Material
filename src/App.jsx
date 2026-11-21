@@ -622,6 +622,7 @@ function App() {
                   variantActions
                   hideCategory={variant.thickness === '75mm' || variant.thickness === '50mm'}
                   sizeCard={variant.thickness === '75mm' || variant.thickness === '50mm'}
+                  showPricePerSqFt
                 />
               ))}
             </div>

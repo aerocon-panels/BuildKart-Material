@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, ExternalLink, LockKeyhole, RefreshCw, Share2, X } from 'lucide-react';
+import { LockKeyhole, RefreshCw, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { createCheckoutOrder, createPaymentIntent, loadPaymentOrder, loadPaymentStatus, markPaymentProcessing } from '../api.js';
 import { money } from '../data.js';
-import { calculatePaymentAmounts, createPaymentLink, createUpiPaymentUri } from '../paymentCalculations.js';
+import { calculatePaymentAmounts, createUpiPaymentUri } from '../paymentCalculations.js';
 
-const PAYMENT_TYPES = ['FullPayment', 'Advance'];
 const PAYMENT_STATUS_LABELS = {
   Pending: 'Pending',
   Processing: 'Processing',
@@ -15,6 +14,37 @@ const PAYMENT_STATUS_LABELS = {
 
 function appPaymentLink(scheme, upiUri) {
   return `${scheme}${upiUri.slice(upiUri.indexOf('?') + 1)}`;
+}
+
+function GooglePayMark() {
+  return (
+    <svg className="google-pay-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M21.5 12.2c0-.7-.1-1.4-.2-2H12v3.7h5.3a4.5 4.5 0 0 1-2 3v2.6h3.2c1.9-1.7 3-4.3 3-7.3Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.5-2.5l-3.2-2.6c-.9.6-2.1 1-3.3 1-2.5 0-4.7-1.7-5.5-4.1H3.2v2.6A10.1 10.1 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.5 13.8a6 6 0 0 1 0-3.8V7.4H3.2a10 10 0 0 0 0 9.2l3.3-2.8Z" />
+      <path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.9 9.9 0 0 0 12 2a10.1 10.1 0 0 0-8.8 5.4l3.3 2.6A6 6 0 0 1 12 6.1Z" />
+    </svg>
+  );
+}
+
+function PhonePeMark() {
+  return (
+    <svg className="phonepe-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="12" fill="#5F259F" />
+      <text x="12" y="16.5" fill="#fff" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="13" fontWeight="700">पे</text>
+    </svg>
+  );
+}
+
+function PaytmMark() {
+  return (
+    <svg className="paytm-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="1" y="5" width="22" height="14" rx="2" fill="#fff" />
+      <text x="12" y="16" fill="#002970" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="8.5" fontWeight="900">paytm</text>
+      <path d="M12 5h11v4h-11z" fill="#00BAF2" />
+      <text x="17.5" y="8.3" fill="#fff" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="4.5" fontWeight="900">pay</text>
+    </svg>
+  );
 }
 
 export default function PaymentDialog({
@@ -41,11 +71,11 @@ export default function PaymentDialog({
     initialPreviewTotal > 0
       ? initialPreviewTotal
       : initialPreviewAmount > 0
-        ? initialPaymentType === 'Advance' ? initialPreviewAmount / 0.2 : initialPreviewAmount
+        ? initialPreviewAmount
         : cartTotal,
   );
   const [sharedPreview, setSharedPreview] = useState(initialPreviewAmount > 0 || initialPreviewTotal > 0);
-  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES.includes(initialPaymentType) ? initialPaymentType : 'FullPayment');
+  const [paymentType, setPaymentType] = useState('FullPayment');
   const [payment, setPayment] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
@@ -54,7 +84,6 @@ export default function PaymentDialog({
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
 
   const isPreview = previewActive && !order;
   const previewOrderTotal = sharedPreview ? previewTotal : cartTotal;
@@ -65,11 +94,7 @@ export default function PaymentDialog({
     amountDue: previewOrderTotal,
   } : null);
   const paymentAmounts = activeOrder ? calculatePaymentAmounts(activeOrder.total, activeOrder.amountDue) : null;
-  const advanceAmount = paymentAmounts?.advancePayment || 0;
-  const paymentAmount = activeOrder
-    ? paymentType === 'Advance' ? advanceAmount : paymentAmounts.fullPayment
-    : 0;
-  const remainingAfterAdvance = paymentAmounts?.remainingAfterAdvance || 0;
+  const paymentAmount = activeOrder ? paymentAmounts.fullPayment : 0;
   const upiIdValid = /^[\w.-]+@[\w.-]+$/.test(upi || '');
   const upiUri = useMemo(() => (
     activeOrder && upiIdValid && (isPreview || payment)
@@ -84,16 +109,6 @@ export default function PaymentDialog({
       })
       : ''
   ), [activeOrder, upiIdValid, upi, storeName, isPreview, payment, paymentAmount, paymentType]);
-  const shareUrl = activeOrder
-    ? createPaymentLink({
-      baseUrl: window.location.href,
-      paymentType,
-      amount: paymentAmount,
-      total: activeOrder.total,
-      orderNumber: activeOrder.orderNumber,
-      isPreview,
-    })
-    : '';
   const canCreateOrder = cart.length > 0 &&
     cart.every(({ product }) => Number.isSafeInteger(Number(product.id)) && Number(product.id) > 0);
 
@@ -113,7 +128,6 @@ export default function PaymentDialog({
     setPayment(null);
     setError('');
     setNotice('');
-    setLinkCopied(false);
   }
 
   async function createOrderFromCart(event) {
@@ -177,11 +191,9 @@ export default function PaymentDialog({
       const sharedOrderNumber = new URLSearchParams(window.location.search).get('payOrder');
       const isSharedOrder = sharedOrderNumber?.toUpperCase() === normalized;
       const type = isSharedOrder ? new URLSearchParams(window.location.search).get('paymentType') : null;
-      if (PAYMENT_TYPES.includes(type)) setPaymentType(type);
+      if (type === 'FullPayment') setPaymentType(type);
       const linkedAmount = isSharedOrder ? Number(new URLSearchParams(window.location.search).get('amount')) : 0;
-      const selectedAmount = type === 'Advance'
-        ? Math.round(result.total * 20) / 100
-        : result.amountDue;
+      const selectedAmount = result.amountDue;
       if (Number.isFinite(linkedAmount) && linkedAmount > 0 && Math.abs(linkedAmount - selectedAmount) >= 0.01) {
         setNotice('The linked amount was recalculated from the current order balance.');
       }
@@ -263,35 +275,6 @@ export default function PaymentDialog({
       setError(requestError.message || 'Payment status could not be refreshed.');
     } finally {
       setRefreshingStatus(false);
-    }
-  }
-
-  async function copyPaymentLink() {
-    if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setLinkCopied(true);
-      setNotice('Payment link copied.');
-      window.setTimeout(() => setLinkCopied(false), 2000);
-    } catch (copyError) {
-      console.error('Unable to copy the payment link.', copyError);
-      setError('Clipboard access is unavailable. Select and copy the payment link below.');
-    }
-  }
-
-  async function sharePaymentLink() {
-    if (!shareUrl) return;
-    if (!navigator.share) {
-      await copyPaymentLink();
-      return;
-    }
-    try {
-      await navigator.share({ title: 'BuildKart payment link', url: shareUrl });
-    } catch (shareError) {
-      if (shareError.name !== 'AbortError') {
-        console.error('Unable to share the payment link.', shareError);
-        setError('The payment link could not be shared. Use Copy payment link instead.');
-      }
     }
   }
 
@@ -384,34 +367,28 @@ export default function PaymentDialog({
                 <span><strong>100% Full Payment</strong><small>{isPreview ? 'Full cart amount · preview only' : 'Pay the outstanding order balance'}</small></span>
                 <b>{money(activeOrder.amountDue)}</b>
               </button>
-              <button
-                type="button"
-                className={`payment-option ${paymentType === 'Advance' ? 'is-selected' : ''}`}
-                onClick={() => selectPaymentType('Advance')}
-                disabled={!isPreview && Boolean(payment && ['Pending', 'Processing'].includes(payment.status))}
-              >
-                <span className="payment-radio" />
-                <span><strong>20% Advance Token</strong><small>Remaining after advance: {money(remainingAfterAdvance)}</small></span>
-                <b>{money(advanceAmount)}</b>
-              </button>
             </div>
 
             <div className="payment-methods">
               <h3>UPI Payment</h3>
-              <div className="upi-brand-list"><span>Google Pay</span><span>PhonePe</span><span>Paytm</span></div>
+              <div className="upi-brand-list">
+                <span className="upi-brand-google"><GooglePayMark /> Google Pay</span>
+                <span className="upi-brand-phonepe"><PhonePeMark /> PhonePe</span>
+                <span className="upi-brand-paytm"><PaytmMark /> Paytm</span>
+              </div>
               <p className="upi-address">UPI ID <strong>{upi || 'Not configured'}</strong></p>
               {isPreview && upiIdValid && (
                 <div className="payment-qr-section">
-                  <div className="payment-qr"><QRCodeSVG value={upiUri} size={180} level="M" includeMargin /></div>
+                  <div className="payment-qr"><QRCodeSVG value={upiUri} size={150} level="M" includeMargin /></div>
                   <div className="payment-qr-details">
                     <strong>{money(paymentAmount)}</strong>
-                    <span>{paymentType === 'Advance' ? '20% advance' : 'Full cart amount'} · preview only</span>
+                    <span>Full cart amount · preview only</span>
                     <span className="payment-status">Preview only · not submitted</span>
                   </div>
                   <div className="upi-app-actions">
-                    <button type="button" className="button button-soft" onClick={() => openPaymentApp('tez://upi/pay?')}>Google Pay</button>
-                    <button type="button" className="button button-soft" onClick={() => openPaymentApp('phonepe://pay?')}>PhonePe</button>
-                    <button type="button" className="button button-soft" onClick={() => openPaymentApp('paytmmp://pay?')}>Paytm</button>
+                    <button type="button" className="button upi-app-google" onClick={() => openPaymentApp('tez://upi/pay?')}><GooglePayMark /> Google Pay</button>
+                    <button type="button" className="button upi-app-phonepe" onClick={() => openPaymentApp('phonepe://pay?')}><PhonePeMark /> PhonePe</button>
+                    <button type="button" className="button upi-app-paytm" onClick={() => openPaymentApp('paytmmp://pay?')}><PaytmMark /> Paytm</button>
                   </div>
                 </div>
               )}
@@ -420,12 +397,12 @@ export default function PaymentDialog({
               )}
               {!isPreview && !payment && (
                 <button type="button" className="button button-primary button-wide" onClick={createUpiPayment} disabled={creatingPayment || paymentAmount <= 0 || paymentAmount > order.amountDue || !upiIdValid}>
-                  {creatingPayment ? 'Preparing secure request…' : `Generate ${paymentType === 'Advance' ? 'advance' : 'full payment'} QR`}
+                  {creatingPayment ? 'Preparing secure request…' : 'Generate full payment QR'}
                 </button>
               )}
               {!isPreview && payment && (
                 <div className="payment-qr-section">
-                  <div className="payment-qr"><QRCodeSVG value={upiUri} size={180} level="M" includeMargin /></div>
+                  <div className="payment-qr"><QRCodeSVG value={upiUri} size={150} level="M" includeMargin /></div>
                   <div className="payment-qr-details">
                     <strong>{money(payment.amount)}</strong>
                     <span>Reference: {payment.transactionReference}</span>
@@ -439,9 +416,9 @@ export default function PaymentDialog({
                   )}
                   {!['Paid', 'Failed'].includes(payment.status) && (
                     <div className="upi-app-actions">
-                      <button type="button" className="button button-soft" onClick={() => openPaymentApp('tez://upi/pay?')}>Google Pay</button>
-                      <button type="button" className="button button-soft" onClick={() => openPaymentApp('phonepe://pay?')}>PhonePe</button>
-                      <button type="button" className="button button-soft" onClick={() => openPaymentApp('paytmmp://pay?')}>Paytm</button>
+                      <button type="button" className="button upi-app-google" onClick={() => openPaymentApp('tez://upi/pay?')}><GooglePayMark /> Google Pay</button>
+                      <button type="button" className="button upi-app-phonepe" onClick={() => openPaymentApp('phonepe://pay?')}><PhonePeMark /> PhonePe</button>
+                      <button type="button" className="button upi-app-paytm" onClick={() => openPaymentApp('paytmmp://pay?')}><PaytmMark /> Paytm</button>
                     </div>
                   )}
                 </div>
@@ -451,22 +428,6 @@ export default function PaymentDialog({
                 : 'UPI/app handoff does not confirm payment. The order is marked Paid only after trusted server-side verification.'}</p>
             </div>
 
-            <div className="payment-methods card-gateway">
-              <div><h3>Card / Net Banking</h3><span className="gateway-unavailable">Not configured</span></div>
-              <p>Live online gateway payments are unavailable because merchant credentials are not configured.</p>
-              <button type="button" className="button button-outline button-wide" disabled>
-                <ExternalLink size={15} /> Proceed to Card / NetBanking Gateway
-              </button>
-            </div>
-
-            <div className="payment-link-section">
-              <label htmlFor="payment-share-link">Payment link · {money(paymentAmount)} · {paymentType === 'Advance' ? 'Advance' : 'Full Payment'}{isPreview ? ' · Preview only' : ''}</label>
-              <input id="payment-share-link" readOnly value={shareUrl} onFocus={(event) => event.target.select()} />
-              <div className="payment-link-actions">
-                <button type="button" className="button button-outline button-small" onClick={copyPaymentLink}><Copy size={14} /> {linkCopied ? 'Copied' : 'Copy payment link'}</button>
-                <button type="button" className="button button-outline button-small" onClick={sharePaymentLink}><Share2 size={14} /> Share</button>
-              </div>
-            </div>
           </>
         )}
       </section>

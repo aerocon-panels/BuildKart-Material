@@ -15,6 +15,7 @@ export default function ProductCard({
   payActions = false,
   hideCategory = false,
   sizeCard = false,
+  showPricePerSqFt = false,
 }) {
   const priceAvailable = product.priceAvailable !== false;
   const title = cardTitle || product.name;
@@ -84,7 +85,15 @@ export default function ProductCard({
           <div className="price">
             {priceAvailable
               ? variantActions
-                ? <><small>Price per piece</small>{money(product.rate * product.coverage)}</>
+                ? showPricePerSqFt
+                  ? (
+                    <>
+                      <small>Price per sq. ft.</small>
+                      {money(product.rate)}<span>/sq ft</span>
+                      <small className="aerocon-piece-price">Per piece: {money(product.rate * product.coverage)}</small>
+                    </>
+                  )
+                  : <><small>Price per piece</small>{money(product.rate * product.coverage)}</>
                 : <><small>Standard Rate</small>{money(product.rate)}<span>/sq ft</span></>
               : <><small>Price</small><span className="price-unavailable">Price on Request</span></>}
           </div>

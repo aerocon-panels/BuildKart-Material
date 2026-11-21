@@ -103,7 +103,7 @@ a { color: inherit; }
 .quiet-button { display: inline-grid; place-items: center; padding: 7px; border: 0; border-radius: 5px; background: transparent; color: #6c796f; }
 .quiet-button:hover { background: #eef2ed; color: var(--green); }
 .product-content > p { min-height: 33px; margin: 8px 0 10px; color: #7b867e; font-size: 11px; line-height: 1.5; }
-.product-spec { padding-top: 10px; border-top: 1px solid #edf0eb; color: #987646; font-size: 10px; }
+.product-spec { padding-top: 10px; border-top: 1px solid #edf0eb; color: #111827; font-size: 10px; font-weight: 600; }
 .product-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
 .price { color: #26382e; font: 800 17px Manrope, sans-serif; }
 .price small { display: block; margin-top: 2px; color: #8a948d; font: 400 9px 'DM Sans', sans-serif; }
@@ -186,7 +186,7 @@ label input, .quote-card label input, .settings-dialog label input { width: 100%
 .settings-dialog > label { margin-top: 13px; }
 .dialog-intro { margin: -5px 0 14px; color: #7b867e; font-size: 11px; line-height: 1.6; }
 .payment-backdrop { z-index: 25; }
-.payment-dialog { width: min(610px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 24px; border: 1px solid #dce5dc; border-radius: 13px; background: #fff; box-shadow: 0 18px 70px #11251f66; }
+.payment-dialog { width: min(470px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 14px; border: 1px solid #dce5dc; border-radius: 13px; background: #fff; box-shadow: 0 18px 70px #11251f66; }
 .payment-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .payment-heading h2 { margin: 8px 0 0; color: #1b3329; font: 800 24px Manrope, sans-serif; letter-spacing: -.5px; }
 .payment-secure-label { display: inline-flex; align-items: center; gap: 6px; color: #65806c; font-size: 9px; font-weight: 800; letter-spacing: 1.1px; }
@@ -225,20 +225,30 @@ label input, .quote-card label input, .settings-dialog label input { width: 100%
 .payment-methods h3 { margin: 0; color: #2c4235; font: 700 13px Manrope, sans-serif; }
 .upi-brand-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
 .upi-brand-list span { padding: 5px 8px; border-radius: 20px; background: #eef3ed; color: #4a6651; font-size: 9px; font-weight: 700; }
+.upi-brand-list .upi-brand-google { background: #edf4ff; color: #4285f4; }
+.upi-brand-list .upi-brand-phonepe { background: #f3edfb; color: #5f259f; }
+.upi-brand-list .upi-brand-paytm { background: #e9f8ff; color: #008fd7; }
+.upi-brand-google, .upi-brand-phonepe, .upi-brand-paytm, .upi-app-google, .upi-app-phonepe, .upi-app-paytm { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.google-pay-mark { width: 17px; height: 17px; flex: 0 0 17px; }
+.phonepe-mark { width: 17px; height: 17px; flex: 0 0 17px; }
+.paytm-mark { width: 34px; height: 17px; flex: 0 0 34px; }
 .upi-address { margin: 0 0 12px; color: #77837a; font-size: 10px; }
 .upi-address strong { color: #324b39; }
-.payment-qr-section { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 12px; margin-top: 12px; }
-.payment-qr { display: grid; place-items: center; min-height: 195px; border: 1px solid #edf0eb; border-radius: 8px; background: #fff; }
+.payment-qr-section { display: grid; grid-template-columns: 1fr; justify-items: center; gap: 8px; margin-top: 10px; }
+.payment-qr { display: grid; place-items: center; width: 170px; min-height: 150px; border: 1px solid #edf0eb; border-radius: 8px; background: #fff; }
 .payment-qr svg { max-width: 100%; height: auto; }
-.payment-qr-details { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
-.payment-qr-details > strong { color: #243e2e; font: 800 20px Manrope, sans-serif; }
+.payment-qr-details { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
+.payment-qr-details > strong { color: #243e2e; font: 800 18px Manrope, sans-serif; }
 .payment-qr-details > span { max-width: 100%; overflow-wrap: anywhere; color: #78847b; font-size: 9px; }
 .payment-status { padding: 4px 8px; border-radius: 20px; background: #f5efdd; color: #8a6a2f !important; font-weight: 700; }
 .payment-status.status-processing { background: #eaf1f8; color: #406583 !important; }
 .payment-status.status-paid { background: #e8f4eb; color: #367447 !important; }
 .payment-status.status-failed { background: #f8eae7; color: #a53d2d !important; }
-.upi-app-actions { display: flex; grid-column: 1 / -1; flex-wrap: wrap; gap: 7px; }
-.upi-app-actions .button { flex: 1; }
+.upi-app-actions { display: flex; grid-column: 1 / -1; flex-wrap: nowrap; justify-content: flex-start; gap: 7px; }
+.upi-app-actions .button { flex: 0 1 118px; width: 118px; min-width: 0; min-height: 34px; padding: 5px 6px; border-radius: 7px; font-size: 10px; white-space: nowrap; }
+.upi-app-actions .upi-app-google { border-color: #d9e6ff; background: #edf4ff; color: #4285f4; }
+.upi-app-actions .upi-app-phonepe { border-color: #e4d7f2; background: #f3edfb; color: #5f259f; }
+.upi-app-actions .upi-app-paytm { border-color: #cfeaf7; background: #e9f8ff; color: #008fd7; }
 .payment-verification-note { margin: 12px 0 0; color: #78847b; font-size: 10px; line-height: 1.6; }
 .card-gateway > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .gateway-unavailable { padding: 4px 7px; border-radius: 20px; background: #f5efdd; color: #85642b; font-size: 8px; font-weight: 700; }
@@ -515,7 +525,7 @@ body { background: #f7f8fb; color: #172033; }
 .product-content { display: flex; min-height: 286px; flex-direction: column; padding: 15px; }
 .product-title-row h3 { color: #202b3d; font-size: 15px; }
 .product-content > p { min-height: 51px; margin: 8px 0 10px; color: #697589; font-size: 11px; line-height: 1.55; }
-.product-spec { margin-top: auto; padding-top: 10px; color: #6e7787; font-size: 10px; line-height: 1.5; }
+.product-spec { margin-top: auto; padding-top: 10px; color: #111827; font-size: 10px; font-weight: 600; line-height: 1.5; }
 .product-footer { align-items: end; margin-top: 13px; }
 .price { color: #1f2937; font: 800 18px Manrope, sans-serif; white-space: nowrap; }
 .price small { margin-bottom: 4px; color: #758094; font-size: 9px; }
@@ -844,6 +854,7 @@ body { background: #f7f8fb; color: #172033; }
 .aerocon-back { margin-bottom: 22px; }
 .aerocon-variant-grid { max-width: 860px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .aerocon-variant-grid .product-content { min-height: 0; }
+.aerocon-variant-grid .price .aerocon-piece-price { margin: 3px 0 0; color: #758094; font-size: 9px; font-weight: 500; }
 .aerocon-variant-grid .product-actions { flex-wrap: wrap; justify-content: flex-end; }
 .aerocon-detail-section { padding-top: 30px; }
 .aerocon-detail-navigation { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
