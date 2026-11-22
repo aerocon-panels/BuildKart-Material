@@ -543,6 +543,7 @@ function App() {
                     product={product}
                     onAdd={addToCart}
                     onPay={payForProduct}
+                    hidePay
                     onEstimate={estimateProduct}
                     onEdit={catalogMode === 'local' ? openProductForm : undefined}
                     onDelete={catalogMode === 'local' ? deleteProduct : undefined}
@@ -609,10 +610,11 @@ function App() {
                   key={variant.slug}
                   product={variant}
                   onAdd={addToCart}
-                  onPay={buyNowProduct}
+                  onPay={payForProduct}
                   onOpen={() => navigate(variant.path)}
                   openHref={variant.path}
                   variantActions
+                  payActions
                   hideCategory={variant.thickness === '75mm' || variant.thickness === '50mm'}
                   sizeCard={variant.thickness === '75mm' || variant.thickness === '50mm'}
                   showPricePerSqFt

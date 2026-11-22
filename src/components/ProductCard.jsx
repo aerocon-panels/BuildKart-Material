@@ -13,6 +13,7 @@ export default function ProductCard({
   cardTitle,
   variantActions = false,
   payActions = false,
+  hidePay = false,
   hideCategory = false,
   sizeCard = false,
   showPricePerSqFt = false,
@@ -117,9 +118,11 @@ export default function ProductCard({
               </>
             ) : (
               <>
-                <button type="button" className="button button-pay button-small" onClick={() => onPay(product)}>
-                  <CreditCard size={14} /> Pay
-                </button>
+                {!hidePay && (
+                  <button type="button" className="button button-pay button-small" onClick={() => onPay(product)}>
+                    <CreditCard size={14} /> Pay
+                  </button>
+                )}
                 <button type="button" className="button button-soft button-small" onClick={() => onAdd(product)}>
                   <Plus size={16} /> Add
                 </button>

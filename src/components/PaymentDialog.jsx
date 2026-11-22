@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LockKeyhole, RefreshCw, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { createCheckoutOrder, createPaymentIntent, loadPaymentOrder, loadPaymentStatus, markPaymentProcessing } from '../api.js';
@@ -61,12 +61,16 @@ export default function PaymentDialog({
   customerDetails,
   canCheckout,
 }) {
+  const isExplicitPreview = initialPreviewAmount > 0 || initialPreviewTotal > 0;
+  const initialCustomerDetailsAreValid = useRef(
+    Boolean(customerDetails.name.trim())
+      && /^\+?[0-9\s()-]{7,20}$/.test(customerDetails.phone.trim()),
+  );
+  const autoCreateAttempted = useRef(false);
   const [orderNumber, setOrderNumber] = useState(initialOrderNumber);
   const [checkoutCustomer, setCheckoutCustomer] = useState(customerDetails);
   const [order, setOrder] = useState(null);
-  const [previewActive, setPreviewActive] = useState(
-    !initialOrderNumber && (initialPreviewAmount > 0 || initialPreviewTotal > 0 || cartTotal > 0),
-  );
+  const [previewActive, setPreviewActive] = useState(!initialOrderNumber && isExplicitPreview);
   const [previewTotal, setPreviewTotal] = useState(
     initialPreviewTotal > 0
       ? initialPreviewTotal
@@ -79,7 +83,6 @@ export default function PaymentDialog({
   const [payment, setPayment] = useState(null);
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const [checkoutOrderCreated, setCheckoutOrderCreated] = useState(false);
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [error, setError] = useState('');
@@ -131,7 +134,7 @@ export default function PaymentDialog({
   }
 
   async function createOrderFromCart(event) {
-    event.preventDefault();
+    event?.preventDefault();
     if (!canCheckout || !canCreateOrder) {
       setError('Use the live product catalogue and database-backed cart to create an online order.');
       return;
@@ -160,7 +163,6 @@ export default function PaymentDialog({
       setPreviewActive(false);
       setSharedPreview(false);
       setPaymentType('FullPayment');
-      setCheckoutOrderCreated(true);
       setNotice('Order created from current database prices. Review the total before paying.');
     } catch (requestError) {
       setError(requestError.message || 'The order could not be created.');
@@ -168,6 +170,19 @@ export default function PaymentDialog({
       setCreatingOrder(false);
     }
   }
+
+  useEffect(() => {
+    if (
+      !initialCustomerDetailsAreValid.current
+      || !canCheckout
+      || !canCreateOrder
+      || initialOrderNumber
+      || isExplicitPreview
+      || autoCreateAttempted.current
+    ) return;
+    autoCreateAttempted.current = true;
+    void createOrderFromCart();
+  }, [canCheckout, canCreateOrder, initialOrderNumber, isExplicitPreview]);
 
   async function findOrder(event, requestedOrderNumber = orderNumber) {
     event?.preventDefault();
@@ -290,7 +305,7 @@ export default function PaymentDialog({
         </div>
         <p className="payment-intro">Payment preview is available without a database. Live order payments require a backend-created order and verified payment intent.</p>
 
-        {cartTotal > 0 && (
+        {cartTotal > 0 && !order && (
           <div className="payment-preview-launch">
             <div>
               <strong>Cart amount preview</strong>
@@ -302,7 +317,7 @@ export default function PaymentDialog({
           </div>
         )}
 
-        {cart.length > 0 && canCheckout && canCreateOrder && (
+        {cart.length > 0 && canCheckout && canCreateOrder && !order && (
           <form className="payment-checkout-form" onSubmit={createOrderFromCart}>
             <h3>Create a real order online</h3>
             <p>The API calculates the final total using current database prices and tax. This creates a real order; payment still requires a separate verified intent.</p>
@@ -311,7 +326,7 @@ export default function PaymentDialog({
                 <input required maxLength={150} value={checkoutCustomer.name} onChange={(event) => setCheckoutCustomer({ ...checkoutCustomer, name: event.target.value })} />
               </label>
               <label>Customer phone
-                <input required type="tel" maxLength={20} value={checkoutCustomer.phone} onChange={(event) => setCheckoutCustomer({ ...checkoutCustomer, phone: event.target.value })} />
+                <input required type="tel" maxLength={20} pattern="\+?[0-9\s()-]{7,20}" value={checkoutCustomer.phone} onChange={(event) => setCheckoutCustomer({ ...checkoutCustomer, phone: event.target.value })} />
               </label>
               <label>Site address (optional)
                 <input maxLength={300} value={checkoutCustomer.address} onChange={(event) => setCheckoutCustomer({ ...checkoutCustomer, address: event.target.value })} />
@@ -320,29 +335,39 @@ export default function PaymentDialog({
                 <input maxLength={20} value={checkoutCustomer.pin} onChange={(event) => setCheckoutCustomer({ ...checkoutCustomer, pin: event.target.value })} />
               </label>
             </div>
-            <button type="submit" className="button button-primary button-wide" disabled={creatingOrder || checkoutOrderCreated}>
-              {creatingOrder ? 'Creating server order…' : checkoutOrderCreated ? 'Order created' : 'Create order and view payment options'}
+            <button type="submit" className="button button-primary button-wide" disabled={creatingOrder}>
+              {creatingOrder ? 'Creating server order…' : 'Create order and view payment options'}
             </button>
           </form>
         )}
 
-        <form className="payment-order-lookup" onSubmit={(event) => findOrder(event)}>
-          <label htmlFor="payment-order-number">Order ID</label>
-          <div className="payment-order-field">
-            <input
-              id="payment-order-number"
-              value={orderNumber}
-              onChange={(event) => setOrderNumber(event.target.value.toUpperCase())}
-              placeholder="Example: BK-500285"
-              autoComplete="off"
-              maxLength={20}
-              required
-            />
-            <button type="submit" className="button button-outline" disabled={loadingOrder}>
-              {loadingOrder ? 'Checking…' : 'Find order'}
-            </button>
-          </div>
-        </form>
+        {(initialOrderNumber || isExplicitPreview) && (
+          <form className="payment-order-lookup" onSubmit={(event) => findOrder(event)}>
+            <label htmlFor="payment-order-number">Order ID</label>
+            <div className="payment-order-field">
+              <input
+                id="payment-order-number"
+                value={orderNumber}
+                onChange={(event) => setOrderNumber(event.target.value.toUpperCase())}
+                placeholder="Example: BK-500285"
+                autoComplete="off"
+                maxLength={20}
+                required
+              />
+              <button type="submit" className="button button-outline" disabled={loadingOrder}>
+                {loadingOrder ? 'Checking…' : 'Find order'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {!initialOrderNumber && !isExplicitPreview && cart.length > 0 && (!canCheckout || !canCreateOrder) && (
+          <p className="payment-message payment-error" role="alert">
+            {canCheckout
+              ? 'A saved order requires active database products in your cart. No order has been created.'
+              : 'A saved order requires the live checkout service. No order has been created; you can choose the clearly marked preview instead.'}
+          </p>
+        )}
 
         {error && <p className="payment-message payment-error" role="alert">{error}</p>}
         {notice && <p className="payment-message" role="status">{notice}</p>}

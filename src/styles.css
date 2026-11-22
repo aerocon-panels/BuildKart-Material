@@ -816,8 +816,17 @@ body { background: #f7f8fb; color: #172033; }
 }
 
 @media (max-width: 380px) {
-  .header-action:not(.header-action-cart) > span:last-child { display: none; }
-  .header-actions { gap: 12px; }
+  .site-header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "brand" "actions" "search";
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+    margin-left: 0;
+  }
+  .header-action { min-width: 0; }
 }
 
 .hero h1 {
