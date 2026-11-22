@@ -45,7 +45,6 @@ function App() {
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
   const [categories, setCategories] = useState(CATEGORIES);
   const [catalogMode, setCatalogMode] = useState('loading');
-  const [catalogError, setCatalogError] = useState('');
   const [cart, setCart] = useState(() => readStorage('bk_cart', []));
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...readStorage('bk_settings', {}) }));
   const [customer, setCustomer] = useState(CUSTOMER_DEFAULTS);
@@ -141,7 +140,6 @@ function App() {
       .catch((error) => {
         if (error.name === 'AbortError') return;
         console.error('Unable to load the BuildKart API catalogue.', error);
-        setCatalogError(error.message);
         setCatalogMode('local');
       });
 
@@ -526,11 +524,6 @@ function App() {
             </label>
           </div>
           {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading products and categories…</p>}
-          {catalogMode === 'local' && catalogError && (
-            <p className="catalogue-status catalogue-status-error" role="alert">
-              The live catalogue is unavailable: {catalogError} Showing products saved in this browser instead.
-            </p>
-          )}
           {catalogMode === 'api' && products.length === 0 && (
             <p className="catalogue-status" role="status">No products are available in the database yet.</p>
           )}

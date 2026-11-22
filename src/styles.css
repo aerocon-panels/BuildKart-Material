@@ -351,6 +351,8 @@ label input, .quote-card label input, .settings-dialog label input { width: 100%
   .payment-qr-section { grid-template-columns: 1fr; }
   .payment-qr { min-height: unset; padding: 8px; }
   .payment-qr-details { align-items: center; }
+  .upi-app-actions { flex-wrap: wrap; width: 100%; }
+  .upi-app-actions .button { flex: 1 1 calc(50% - 4px); width: auto; }
 }
 
 :root {
@@ -659,8 +661,10 @@ body { background: #f7f8fb; color: #172033; }
   .sort-field { align-items: flex-end; flex-direction: column; gap: 4px; font-size: 10px; }
   .sort-field select { min-width: 125px; max-width: 150px; min-height: 34px; padding: 7px; font-size: 10px; }
   .product-grid { grid-template-columns: 1fr; gap: 13px; }
-  .product-card { display: grid; grid-template-columns: 36% 1fr; }
-  .product-content { min-height: 230px; padding: 11px; }
+  .product-card { display: block; }
+  .product-art { width: 100%; aspect-ratio: 3 / 2; }
+  .product-art img { width: 100%; height: 100%; object-fit: cover; }
+  .product-content { min-height: 0; padding: 11px; }
   .product-title-row h3 { font-size: 12px; }
   .product-content > p { min-height: unset; margin: 6px 0; font-size: 9px; }
   .product-spec { padding-top: 7px; font-size: 8px; }
