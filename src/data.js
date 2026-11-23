@@ -154,11 +154,12 @@ export function ensureBisonBoardProducts(products) {
 }
 
 export const DEFAULT_SETTINGS = {
-  phone: '918317666756',
+  phone: '919381789564',
+  phone2: '919381789564',
   upi: '8317666756@upi',
   storeName: 'BuildKart Materials',
-  location: 'Industrial Area, Phase 2, Hyderabad',
-  gstin: '36AAAAA0000A1Z5',
+  location: 'Plot no 19, H.No. 1-121/19, Sonata Lane, Miyapur Allwin X Roads Signal, Chanda Nagar, Gachibowli - Miyapur Rd, Kondapur, Hafeezpet, Hyderabad, Telangana 500049',
+  gstin: '',
 };
 
 export function readStorage(key, fallback) {

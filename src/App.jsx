@@ -826,7 +826,10 @@ function App() {
 
       <footer className="site-footer">
         <div><strong>{settings.storeName}</strong><span>{settings.location}</span></div>
-        <div><span>Contact: {displayPhone}</span>{settings.gstin && <span>GSTIN: {settings.gstin}</span>}</div>
+       <div>
+        <span>Contact: {displayPhone}{settings.phone2 ? `, ${formatStorePhone(settings.phone2)}` : ''}</span>
+        {settings.gstin && <span>GSTIN: {settings.gstin}</span>}
+      </div>
         <small>Product rates, availability, delivery, and final taxes are subject to confirmation.</small>
       </footer>
       {settingsOpen && <SettingsDialog settings={settings} onSave={saveSettings} onClose={() => setSettingsOpen(false)} />}
