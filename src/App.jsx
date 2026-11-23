@@ -48,7 +48,11 @@ function App() {
   const [categories, setCategories] = useState(CATEGORIES);
   const [catalogMode, setCatalogMode] = useState('loading');
   const [cart, setCart] = useState(() => readStorage('bk_cart', []));
-  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...readStorage('bk_settings', {}) }));
+ const [settings, setSettings] = useState(() => ({
+  ...DEFAULT_SETTINGS,
+  ...readStorage('bk_settings', {}),
+  location: DEFAULT_SETTINGS.location,
+}));
   const [customer, setCustomer] = useState(CUSTOMER_DEFAULTS);
   const [category, setCategory] = useState('All materials');
   const [search, setSearch] = useState('');
