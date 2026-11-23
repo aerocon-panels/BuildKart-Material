@@ -137,3 +137,11 @@ export async function markPaymentProcessing(paymentId) {
 export async function loadPaymentStatus(paymentId) {
   return requestJson(`payments/transactions/${paymentId}`);
 }
+
+export async function signUpCustomer(details) {
+  return requestJson('customer-signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(details),
+  });
+}

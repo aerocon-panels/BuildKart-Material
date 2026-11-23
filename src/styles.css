@@ -909,6 +909,35 @@ body { background: #f7f8fb; color: #172033; }
 .checkout-heading h1 { margin: 7px 0; color: #172033; font: 800 clamp(26px, 3vw, 36px) Manrope, sans-serif; }
 .checkout-heading > p:last-child { color: #697589; font-size: 13px; }
 
+.standalone-cart { width: min(1180px, calc(100% - 48px)); margin: 30px auto; padding: 28px; border: 1px solid #e6e9ef; border-radius: 16px; background: #fff; }
+.standalone-cart-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.standalone-cart-heading h1 { margin: 7px 0 4px; color: #172033; font: 800 clamp(26px, 3vw, 36px) Manrope, sans-serif; }
+.standalone-cart-heading p { margin: 0; color: #697589; font-size: 13px; }
+.standalone-cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 20px; }
+.standalone-cart-items, .standalone-cart-summary, .standalone-cart-empty { padding: 20px; border: 1px solid #e4e8ef; border-radius: 13px; background: #fff; box-shadow: 0 4px 14px #18253b08; }
+.standalone-cart-item { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto auto auto; align-items: center; gap: 16px; padding: 15px 0; border-bottom: 1px solid #edf0eb; }
+.standalone-cart-item:first-child { padding-top: 0; }
+.standalone-cart-item:last-child { padding-bottom: 0; border-bottom: 0; }
+.standalone-cart-image { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; }
+.standalone-cart-product { min-width: 0; }
+.standalone-cart-product h2 { margin: 0 0 5px; color: #26364d; font-size: 13px; }
+.standalone-cart-product p { margin: 0 0 5px; color: #7d8798; font-size: 10px; }
+.standalone-cart-product > span, .standalone-cart-quantity > span, .standalone-cart-subtotal > span { color: #717d90; font-size: 10px; }
+.standalone-cart-quantity, .standalone-cart-subtotal { display: flex; flex-direction: column; gap: 7px; }
+.standalone-cart-subtotal strong { color: #1f2c42; font-size: 12px; white-space: nowrap; }
+.standalone-cart-remove { display: inline-flex; align-items: center; gap: 5px; padding: 7px; border: 0; background: transparent; color: #a4473d; font: inherit; font-size: 10px; cursor: pointer; }
+.standalone-cart-remove:hover { color: #812c24; }
+.standalone-cart-summary h2 { margin: 0 0 16px; color: #1f2937; font: 700 16px Manrope, sans-serif; }
+.standalone-cart-summary > div { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; color: #697589; font-size: 11px; }
+.standalone-cart-summary > div strong { color: #26364d; white-space: nowrap; }
+.standalone-cart-summary .standalone-cart-total { margin: 5px 0 14px; padding-top: 14px; border-top: 1px solid #e7eaf0; color: #172033; font-weight: 700; }
+.standalone-cart-summary .standalone-cart-total strong { color: #172033; font-size: 17px; }
+.standalone-cart-summary > p { padding: 10px; border-radius: 7px; background: #fff8e9; color: #87510b; font-size: 10px; line-height: 1.5; }
+.standalone-cart-summary .button { width: 100%; margin-top: 8px; }
+.standalone-cart-empty { min-height: 270px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #8290a1; font-size: 12px; text-align: center; }
+.standalone-cart-empty strong { color: #26364d; font-size: 16px; }
+.standalone-cart-empty .button { margin-top: 8px; }
+
 @media (max-width: 600px) {
   .aerocon-variant-grid { grid-template-columns: 1fr; }
   .aerocon-variant-grid .product-card { display: block; }
@@ -924,6 +953,14 @@ body { background: #f7f8fb; color: #172033; }
   .aerocon-detail-actions .button { flex: 1 1 140px; }
   .cart-product-image { width: 37px; height: 37px; }
   .checkout-heading { padding-top: 20px; }
+  .standalone-cart { width: calc(100% - 28px); margin: 15px auto; padding: 17px; }
+  .standalone-cart-layout { grid-template-columns: 1fr; }
+  .standalone-cart-item { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 9px; }
+  .standalone-cart-image { width: 42px; height: 42px; }
+  .standalone-cart-product { grid-column: 2 / 4; grid-row: 1; }
+  .standalone-cart-quantity { grid-column: 2; grid-row: 2; }
+  .standalone-cart-subtotal { grid-column: 3; grid-row: 2; justify-self: end; }
+  .standalone-cart-remove { grid-column: 3; grid-row: 3; justify-self: end; }
 }
 
 .product-image-admin { margin-top: 20px; border: 1px solid #e4e8ef; border-radius: 10px; background: #fff; }
@@ -977,4 +1014,46 @@ body { background: #f7f8fb; color: #172033; }
   .aerocon-size-card .product-actions .button { min-height: 36px; padding: 7px 9px; font-size: 10px; }
   .product-image-upload-form { grid-template-columns: 1fr; }
   .product-image-upload-form .product-image-file, .product-image-upload-status { grid-column: auto; }
+}
+.signup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+.signup-box {
+  width: 360px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px;
+  border-radius: 12px;
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+.signup-box h3 {
+  margin: 0 0 4px;
+  font: 800 20px Manrope, sans-serif;
+}
+.signup-box input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccd3dd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline-color: #d97706;
+}
+.signup-box .button {
+  width: 100%;
+}
+.signup-error {
+  margin: 0;
+  color: #c00;
+  font-size: 13px;
 }

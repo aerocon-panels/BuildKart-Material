@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CreditCard, Search, ShoppingCart } from 'lucide-react';
 import CartPanel from './components/CartPanel.jsx';
+import CartPage from './components/CartPage.jsx';
 import Estimator from './components/Estimator.jsx';
 import PaymentDialog from './components/PaymentDialog.jsx';
 import ProductCard from './components/ProductCard.jsx';
 import ProductImageAdmin from './components/ProductImageAdmin.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
+import SignupDialog from './components/SignupDialog.jsx';
 import {
   AEROCON_VARIANTS,
   AEROCON_CATEGORY_PATH,
@@ -27,7 +29,7 @@ import {
   restoreAeroconDefaultRate,
   writeStorage,
 } from './data.js';
-import { loadCatalog, loadProductImages } from './api.js';
+import { loadCatalog, loadProductImages, signUpCustomer } from './api.js';
 
 const CUSTOMER_DEFAULTS = { name: '', phone: '', project: '', address: '', pin: '' };
 
@@ -59,6 +61,8 @@ function App() {
     return parameters.has('payOrder') || parameters.get('paymentPreview') === 'true';
   });
   const [notice, setNotice] = useState('');
+  const [signedUp, setSignedUp] = useState(() => readStorage('bk_signup', null));
+  const [signupOpen, setSignupOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(INITIAL_PRODUCTS[0].id);
   const [length, setLength] = useState('20');
   const [width, setWidth] = useState('8');
@@ -240,6 +244,7 @@ function App() {
     return category === 'Bison Boards' ? result.slice(0, 5) : result;
   }, [storeProducts, bisonProducts, category, search, sort]);
 
+  const isCartRoute = currentPath === '/cart';
   const isCheckoutRoute = currentPath === '/checkout';
   const hasPriceOnRequest = cart.some(({ product }) => product.priceAvailable === false);
   const subtotal = cart.reduce((sum, item) => (
@@ -276,6 +281,23 @@ function App() {
         : [...current, { product, quantity }];
     });
     notify('Material added to your project cart.');
+  }
+
+  function openCart() {
+    if (!signedUp) {
+      setSignupOpen(true);
+      return;
+    }
+    navigate('/cart');
+  }
+
+  async function handleSignup(details) {
+    const saved = await signUpCustomer(details);
+    writeStorage('bk_signup', saved);
+    setSignedUp(saved);
+    setCustomer((current) => ({ ...current, name: saved.name, phone: saved.phone }));
+    setSignupOpen(false);
+    navigate('/cart');
   }
 
   function updateCartQuantity(productId, delta) {
@@ -469,13 +491,25 @@ function App() {
           <button type="button" className="header-action" aria-label="Account" onClick={() => setSettingsOpen(true)}>
             <span className="header-action-icon" aria-hidden="true">👤</span><span>Account</span>
           </button>
-          <a className="header-action header-action-cart" href="#cart" aria-label={`Cart, ${units} items`}>
+          <button type="button" className="header-action header-action-cart" onClick={openCart} aria-label={`Cart, ${units} items`}>
             <span className="header-action-icon" aria-hidden="true">🛒</span><span>Cart <b>{units}</b></span>
-          </a>
+          </button>
         </div>
       </header>
 
       <main>
+        {isCartRoute && (
+          <CartPage
+            cart={cart}
+            onQuantity={updateCartQuantity}
+            onRemove={(id) => setCart((current) => current.filter((item) => item.product.id !== id))}
+            subtotal={subtotal}
+            total={total}
+            onContinueShopping={() => navigate('/#products')}
+            onCheckout={() => navigate('/checkout')}
+          />
+        )}
+
         {isCheckoutRoute && (
           <section className="section checkout-heading">
             <button type="button" className="button button-outline" onClick={() => navigate('/#products')}>
@@ -487,7 +521,7 @@ function App() {
           </section>
         )}
 
-        {!aeroconRoute && !isBisonCategoryRoute && !isCheckoutRoute && <>
+        {!aeroconRoute && !isBisonCategoryRoute && !isCheckoutRoute && !isCartRoute && <>
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-main">
@@ -774,7 +808,7 @@ function App() {
           </section>
         )}
 
-        {isCheckoutRoute ? cartPanel : <>
+        {isCheckoutRoute ? cartPanel : !isCartRoute && <>
         <Estimator
           products={estimatorProducts}
           selectedId={selectedId}
@@ -787,7 +821,6 @@ function App() {
           onWastage={setWastage}
           onAdd={addToCart}
         />
-        {cartPanel}
         </>}
       </main>
 
@@ -813,6 +846,7 @@ function App() {
           canCheckout={catalogMode === 'api'}
         />
       )}
+      {signupOpen && <SignupDialog onSubmit={handleSignup} onClose={() => setSignupOpen(false)} />}
       {notice && <div className="toast" role="status">{notice}</div>}
     </>
   );
