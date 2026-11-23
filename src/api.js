@@ -139,9 +139,19 @@ export async function loadPaymentStatus(paymentId) {
 }
 
 export async function signUpCustomer(details) {
-  return requestJson('customer-signup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(details),
-  });
+  try {
+    return await requestJson('customer-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(details),
+    });
+  } catch (error) {
+    // TypeError means the server could not be reached (it is not running).
+    // In that case keep the customer in this browser only, so the cart still opens.
+    if (error instanceof TypeError) {
+      console.warn('Signup server is not running. Saving the customer in this browser only.', error);
+      return { ...details, id: `local-${Date.now()}`, savedLocally: true };
+    }
+    throw error;
+  }
 }
