@@ -1,0 +1,8 @@
+name = "buildkart-api"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "buildkartdb"
+database_id = "3886e5e9-a3e9-4a6d-a63d-8fc9d690f215"
