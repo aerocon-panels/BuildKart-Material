@@ -17,3 +17,4 @@ secrets.json
 *.p12
 *.pem
 *.key
+worker/src/sync.token
