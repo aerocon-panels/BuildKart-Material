@@ -9,6 +9,7 @@ import ProductImageAdmin from './components/ProductImageAdmin.jsx';
 import ProductForm from './components/ProductForm.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
 import SignupDialog from './components/SignupDialog.jsx';
+import AccountDialog from './components/AccountDialog.jsx';
 import {
   AEROCON_VARIANTS,
   AEROCON_CATEGORY_PATH,
@@ -48,11 +49,11 @@ function App() {
   const [categories, setCategories] = useState(CATEGORIES);
   const [catalogMode, setCatalogMode] = useState('loading');
   const [cart, setCart] = useState(() => readStorage('bk_cart', []));
- const [settings, setSettings] = useState(() => ({
-  ...DEFAULT_SETTINGS,
-  ...readStorage('bk_settings', {}),
-  location: DEFAULT_SETTINGS.location,
-}));
+  const [settings, setSettings] = useState(() => ({
+    ...DEFAULT_SETTINGS,
+    ...readStorage('bk_settings', {}),
+    location: DEFAULT_SETTINGS.location,
+  }));
   const [customer, setCustomer] = useState(CUSTOMER_DEFAULTS);
   const [category, setCategory] = useState('All materials');
   const [search, setSearch] = useState('');
@@ -67,6 +68,7 @@ function App() {
   const [notice, setNotice] = useState('');
   const [signedUp, setSignedUp] = useState(() => readStorage('bk_signup', null));
   const [signupOpen, setSignupOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(INITIAL_PRODUCTS[0].id);
   const [length, setLength] = useState('20');
   const [width, setWidth] = useState('8');
@@ -118,7 +120,7 @@ function App() {
     const controller = new AbortController();
     loadCatalog(controller.signal)
       .then((catalog) => {
-        setProducts(catalog.products);
+        setProducts(ensureBisonBoardProducts(catalog.products));
         setCategories(catalog.categories);
         setSelectedId(catalog.products.find((product) => !isAeroconSizeVariant(product))?.id || '');
         const catalogVariants = getAeroconVariants(catalog.products);
@@ -489,10 +491,10 @@ function App() {
           <a className="header-action" href="#cart" aria-label="Track Order">
             <span className="header-action-icon" aria-hidden="true">🚚</span><span>Track Order</span>
           </a>
-          <a className="header-action" aria-label="Help" href={`https://wa.me/${settings.phone.replace(/[^\d]/g, '')}`} target="_blank" rel="noreferrer">
+          <a className="header-action" aria-label="Help" href="/help.html">
             <span className="header-action-icon" aria-hidden="true">🎧</span><span>Help</span>
           </a>
-          <button type="button" className="header-action" aria-label="Account" onClick={() => setSettingsOpen(true)}>
+          <button type="button" className="header-action" aria-label="Account" onClick={() => setAccountOpen(true)}>
             <span className="header-action-icon" aria-hidden="true">👤</span><span>Account</span>
           </button>
           <button type="button" className="header-action header-action-cart" onClick={openCart} aria-label={`Cart, ${units} items`}>
@@ -614,7 +616,7 @@ function App() {
             </div>
             {catalogMode === 'loading' && <p className="catalogue-status" role="status">Loading Bison board options…</p>}
             <div className="product-grid bison-size-grid">
-              {bisonProducts.slice(0, 5).map((product) => (
+             {bisonProducts.filter((product) => product.isBisonVariant).slice(0, 4).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -830,10 +832,10 @@ function App() {
 
       <footer className="site-footer">
         <div><strong>{settings.storeName}</strong><span>{settings.location}</span></div>
-       <div>
-        <span>Contact: {displayPhone}{settings.phone2 ? `, ${formatStorePhone(settings.phone2)}` : ''}</span>
-        {settings.gstin && <span>GSTIN: {settings.gstin}</span>}
-      </div>
+        <div>
+          <span>Contact: {displayPhone}{settings.phone2 ? `, ${formatStorePhone(settings.phone2)}` : ''}</span>
+          {settings.gstin && <span>GSTIN: {settings.gstin}</span>}
+        </div>
         <small>Product rates, availability, delivery, and final taxes are subject to confirmation.</small>
       </footer>
       {settingsOpen && <SettingsDialog settings={settings} onSave={saveSettings} onClose={() => setSettingsOpen(false)} />}
@@ -854,6 +856,13 @@ function App() {
         />
       )}
       {signupOpen && <SignupDialog onSubmit={handleSignup} onClose={() => setSignupOpen(false)} />}
+      {accountOpen && (
+        <AccountDialog
+          onClose={() => setAccountOpen(false)}
+          onCustomerLogin={() => { setAccountOpen(false); setSignupOpen(true); }}
+        onAdminSuccess={() => { setAccountOpen(false); notify('Admin login successful.'); }}
+        />
+      )}
       {notice && <div className="toast" role="status">{notice}</div>}
     </>
   );

@@ -136,8 +136,8 @@ export function getAerocon75Variants(products, productImages = []) {
     const legacySku = variant.sku.replace('-75-', '-175-');
     const source = aeroconProducts.find((product) => product.sku === variant.sku || product.sku === legacySku)
       || aeroconProducts.find((product) => hasThickness(product, variant.thickness) && hasDimensions(product, variant.dimensions));
-    const rate = source ? Number(source.rate) : variant.price / variant.coverage;
-    const coverage = source ? Number(source.coverage) : variant.coverage;
+        const coverage = variant.coverage;
+    const rate = variant.price / variant.coverage;
     const priceAvailable = Number.isFinite(rate) && rate > 0 && Number.isFinite(coverage) && coverage > 0;
 
     return {

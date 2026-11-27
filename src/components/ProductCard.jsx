@@ -1,6 +1,13 @@
 import { Calculator, CreditCard, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { money } from '../data.js';
 
+const FALLBACK_IMAGES = {
+  'Aerocon Panels': '/product-images/aerocon-sandwich-panel.jpeg',
+  'Bison Boards': '/product-images/cement_fiber_board.png',
+  'Roofing Sheets': '/product-images/material-3.jpg',
+  'Elevation Planks': '/product-images/material-4.jpg',
+};
+
 export default function ProductCard({
   product,
   onAdd,
@@ -20,7 +27,9 @@ export default function ProductCard({
 }) {
   const priceAvailable = product.priceAvailable !== false;
   const title = cardTitle || product.name;
-  const image = product.image || '/product-images/material-1.jpg';
+  const image = product.image
+    || FALLBACK_IMAGES[product.category]
+    || '/product-images/aerocon-sandwich-panel.jpeg';
 
   return (
     <article className={`product-card${sizeCard ? ' aerocon-size-card' : ''}`}>

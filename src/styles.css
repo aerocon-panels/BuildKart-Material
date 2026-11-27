@@ -102,7 +102,7 @@ a { color: inherit; }
 .product-tools { display: flex; gap: 1px; flex-shrink: 0; margin: -7px -7px 0 0; }
 .quiet-button { display: inline-grid; place-items: center; padding: 7px; border: 0; border-radius: 5px; background: transparent; color: #6c796f; }
 .quiet-button:hover { background: #eef2ed; color: var(--green); }
-.product-content > p { min-height: 33px; margin: 8px 0 10px; color: #7b867e; font-size: 11px; line-height: 1.5; }
+.product-content > p { margin: 8px 0 10px; color: #7b867e; font-size: 11px; line-height: 1.5; }
 .product-spec { padding-top: 10px; border-top: 1px solid #edf0eb; color: #111827; font-size: 10px; font-weight: 600; }
 .product-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
 .price { color: #26382e; font: 800 17px Manrope, sans-serif; }
@@ -524,10 +524,10 @@ body { background: #f7f8fb; color: #172033; }
 .product-art { justify-content: initial; background: #eef0f4; }
 .product-art img { width: 100%; height: 100%; object-fit: cover; }
 .product-art::after { background: linear-gradient(180deg, #11182725, transparent 34%, transparent 64%, #11182725); }
-.product-content { display: flex; min-height: 286px; flex-direction: column; padding: 15px; }
+.product-content { display: flex; flex-direction: column; padding: 15px; }
 .product-title-row h3 { color: #202b3d; font-size: 15px; }
-.product-content > p { min-height: 51px; margin: 8px 0 10px; color: #697589; font-size: 11px; line-height: 1.55; }
-.product-spec { margin-top: auto; padding-top: 10px; color: #111827; font-size: 10px; font-weight: 600; line-height: 1.5; }
+.product-content > p { margin: 8px 0 10px; color: #697589; font-size: 11px; line-height: 1.55; }
+.product-spec { padding-top: 10px; color: #111827; font-size: 10px; font-weight: 600; line-height: 1.5; }
 .product-footer { align-items: end; margin-top: 13px; }
 .price { color: #1f2937; font: 800 18px Manrope, sans-serif; white-space: nowrap; }
 .price small { margin-bottom: 4px; color: #758094; font-size: 9px; }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help - BuildKart-Store</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0b1b2e; color: #fff;
+           min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .box { text-align: center; padding: 32px 20px; width: 100%; max-width: 560px; }
+    h1 { color: #f59e0b; margin: 0 0 12px; font-size: clamp(28px, 7vw, 40px); }
+    p { font-size: clamp(16px, 4.5vw, 20px); line-height: 1.6; margin: 8px 0; }
+    .numbers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-top: 8px; }
+    a.phone { color: #fff; text-decoration: none; font-weight: bold; white-space: nowrap;
+              font-size: clamp(18px, 5.5vw, 24px); }
+    a.back { display: inline-block; margin-top: 24px; padding: 12px 24px; background: #d97706;
+             color: #fff; text-decoration: none; border-radius: 8px; }
+    @media (max-width: 480px) {
+      .numbers { flex-direction: column; align-items: center; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Need Help?</h1>
+    <p>Please contact these numbers:</p>
+    <p>Contact:</p>
+    <div class="numbers">
+      <a class="phone" href="tel:+919381789564">+91 9381789564</a>
+      <a class="phone" href="tel:+919381789564">+91 9381789564</a>
+    </div>
+    <a class="back" href="/">Back to Store</a>
+  </div>
+</body>
+</html>
